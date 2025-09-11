@@ -1,7 +1,17 @@
 export class Asignatura {
-    codigo_asignatura: string;
-    nombre_asignatura: string;
+    idAsignatura: number;
+    idMalla: number;
+    codigoAsignatura: string;
+    nombreAsignatura: string;
     creditos: number;
-    prerequisitos: Asignatura[];
-    semestre_en_que_se_imparte: number;
+    semestreMalla: number;
+
+    constructor(idAsignatura: number, idMalla: number, codigoAsignatura: string, nombreAsignatura: string, creditos: number, semestreMalla: number) {
+        this.idAsignatura = idAsignatura;
+        this.idMalla = idMalla;
+        this.codigoAsignatura = codigoAsignatura;
+        this.nombreAsignatura = nombreAsignatura;
+        this.creditos = creditos;
+        this.semestreMalla = semestreMalla;
+    }
 }

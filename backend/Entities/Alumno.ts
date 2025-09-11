@@ -1,9 +1,16 @@
-
 export class Alumno {
-    rut_alumno: string;
+    RUT: string;
     nombre: string;
-    apellido: string
-    email: string
-}
+    apellido: string;
+    email: string;
+    passwordHash: string;
 
+    constructor(RUT: string, nombre: string, apellido: string, email: string, passwordHash: string) {
+        this.RUT = RUT;
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.email = email;
+        this.passwordHash = passwordHash;
+    }
+}
 
