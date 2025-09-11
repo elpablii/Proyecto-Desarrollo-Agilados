@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ucn login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Solo estilos mínimos para el logo */
+        .logo {
+            border: 2px solid black;
+            box-shadow: 5px 5px 5px #888888;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col" >
+    <header class="flex flex-col items-center justify-center bg-blue-900 text-white py-4 shadow-md">
+        <img class="w-16 h-16 mb-2 " src="/Escudo-UCN-Full-Color.png" alt="no foto ucn">
+        <h1 class="text-xl font-bold hover:text-gray-300 hover:pointer ">Bienvenido a UCN</h1>
+    </header>
+    <main class="flex-1 flex flex-col items-center justify-center px-4 h-screen bg-cover bg-center bg-no-repeat bg-[url(/Coquimbo-ok.jpg)]">
+        
+        <div class="w-full max-w-md bg-white rounded-lg shadow-lg p-6 mt-8 mb-8">
+            <form action="/login" method="POST" class="flex flex-col gap-4">
+                <label for="username" class="text-center font-semibold">Usuario:</label>
+                <input id="username" name="username" required class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label for="password" class="text-center font-semibold">Contraseña:</label>
+                <input type="password" id="password" name="password" required class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded transition-colors">Iniciar sesión</button>
+                
+            </form>
+        </div>
+        
+    
+    </main>
+     <footer class="bg-gray-800 text-white text-center py-4 flex justify-center gap-5">
+            <h3>@bySepaxl</h3>
+         <img class="size-12 rounded-md "  src="/rat-dancing-meme.gif" alt="rata bailando">
+        </footer>
+
+   
+</body>
+</html>
