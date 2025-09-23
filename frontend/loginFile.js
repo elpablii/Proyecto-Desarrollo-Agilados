@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 // Redirige a YouTube si el login es exitoso
                 alert("¡Login exitoso! Redirigiendo a YouTube...");
-                window.location.href = "./dePrueba.html;
+                window.location.href = "./dePrueba.html";
             }
         } catch (error) {
             console.error("Error al realizar la solicitud:", error);
