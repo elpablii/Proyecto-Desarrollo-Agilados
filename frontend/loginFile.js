@@ -12,12 +12,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const username = document.getElementById("username").value;
         const password = document.getElementById("password").value;
 
+        
+
         const endpoint = `https://puclaro.ucn.cl/eross/avance/login.php?email=${username}&password=${password}`;
 
         try {
             const response = await fetch(endpoint, { method: "GET" });
             const data = await response.json();
-
+            
             if (data.error) {
                 // Redirige a Google si las credenciales son incorrectas
                 alert("Credenciales incorrectas. Redirigiendo a Google...");
@@ -25,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 // Redirige a YouTube si el login es exitoso
                 alert("¡Login exitoso! Redirigiendo a YouTube...");
+               await localStorage.setItem("nombreUsuario", data.rut);
                 window.location.href = "./dePrueba.html";
             }
         } catch (error) {
