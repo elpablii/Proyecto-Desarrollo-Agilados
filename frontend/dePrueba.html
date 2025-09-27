@@ -7,19 +7,23 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body> 
-    <script src="manejoDatos.js"></script>   
-<header class = "bg-blue-500 w-full justify-end flex pb-3" id = "cabezon">
+<header class = " grid bg-blue-500 w-full grid-flow-col pb-3 justify-between" id = "cabezon">
+    <div>
+        <img src="/Escudo-UCN-Full-Color.png" alt="Escudo-UCN-Full-Color"
+        class = "w-10 h-10 mt-2 ml-2 ">
 
+    </div>
+
+    <div id="saludo-usuario">
+        
+    </div>
     <button id ="logout" class = "cursor-pointer border border-black hover:bg-blue-600 
-    rounded-l text-white mt-3">
+    rounded-sm text-white mt-3 transitio duration-300 px-2 mr-2">
         cerrar sesion
 </button>
     <script src="logout.js"></script>
-
 </header>
 
+<script src="manejoDatos.js"></script>
 </body>
-
-
-
 </html>
