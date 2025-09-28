@@ -18,13 +18,19 @@ async function cargarDatosCarrera(rut) {
     }
 
     try {
+        console.log(`Cargando datos de carrera para RUT: ${rut}`);
         const response = await fetch(`http://localhost:3001/carreras/${rut}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include'
         });
         
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('Datos recibidos:', data);
         
         if (data.error) {
             console.error('Error al obtener datos de carrera:', data.error);
@@ -34,7 +40,7 @@ async function cargarDatosCarrera(rut) {
         }
     } catch (error) {
         console.error('Error al realizar la solicitud:', error);
-        mostrarError('Error de conexión al cargar datos de carrera');
+        mostrarError('Error de conexión al cargar datos de carrera. Verifica que el backend esté ejecutándose.');
     }
 }
 
