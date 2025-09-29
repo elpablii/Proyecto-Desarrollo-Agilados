@@ -1,0 +1,300 @@
+openapi: 3.0.3
+info:
+  title: API Intermedia - Detalles de Carrera por Usuario
+  version: 1.0.0
+  description: |
+    Contrato de los endpoints expuestos por el backend intermedio.
+    La respuesta de carreras se normaliza como { rut, carreras: [...], meta? }.
+
+servers:
+  - url: http://localhost:3001
+    description: Servidor local de desarrollo
+
+tags:
+  - name: Auth
+    description: Inicio de sesión y manejo de sesión
+  - name: Carreras
+    description: Consulta de detalles de carrera por RUT
+
+paths:
+  /login:
+    post:
+      tags: [Auth]
+      summary: Inicia sesión contra servicio UCN y propaga cookie de sesión
+      description: |
+        Autentica al usuario con email y password. Si el backend origen entrega cookie
+        de sesión, el proxy la reenviará al cliente. Recomendado usar cookie HttpOnly,
+        Secure, SameSite=Lax/Strict. La respuesta incluye datos mínimos del usuario si están disponibles.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Autenticación exitosa
+          headers:
+            Set-Cookie:
+              description: Cookie de sesión reenviada si el backend origen la entrega (HttpOnly recomendada)
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                ejemplo:
+                  summary: Login correcto con cookie HttpOnly
+                  value:
+                    rut: "12.345.678-9"
+                    token: null
+                    meta:
+                      source: puclaro.ucn.cl
+                      fetchedAt: "2025-09-29T12:34:56Z"
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalido:
+                  value:
+                    error: "Credenciales inválidas"
+        '500':
+          description: Error interno o en servicio externo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                externo:
+                  value:
+                    error: "Error al conectar con UCN"
+                    detalle: "ECONNREFUSED"
+
+  /carreras/{rut}:
+    get:
+      tags: [Carreras]
+      summary: Obtiene las carreras para un RUT
+      description: |
+        Intenta múltiples endpoints del origen. Si no hay datos válidos, devuelve un payload de ejemplo.
+        Respuesta normalizada en el esquema `CareerDetailsResponse`.
+      operationId: getCarrerasPorRut
+      parameters:
+        - in: path
+          name: rut
+          required: true
+          schema:
+            type: string
+          description: RUT del usuario (sin puntos, con guion)
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Datos de carrera encontrados o datos de ejemplo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerDetailsResponse'
+              examples:
+                ejemplo:
+                  value:
+                    rut: "12.345.678-9"
+                    carreras:
+                      - codigo: "8266"
+                        nombre: "ITI"
+                        catalogo: "202410"
+                      - codigo: "8606"
+                        nombre: "ICCI"
+                        catalogo: "201610"
+                    meta:
+                      source: puclaro.ucn.cl
+                      fetchedAt: "2025-09-29T12:34:56Z"
+        '500':
+          description: Error al obtener datos de carrera
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /carreras:
+    post:
+      tags: [Carreras]
+      summary: Obtiene carreras autenticando con email y password en la misma llamada
+      operationId: postCarrerasConCredenciales
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rut, email, password]
+              properties:
+                rut:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Datos de carrera
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerDetailsResponse'
+              examples:
+                ejemplo:
+                  value:
+                    rut: "12.345.678-9"
+                    carreras:
+                      - codigo: "8266"
+                        nombre: "ITI"
+                        catalogo: "202410"
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno o en servicio externo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /carreras-autenticado/{rut}:
+    get:
+      tags: [Carreras]
+      summary: Obtiene carreras usando credenciales del usuario autenticado
+      operationId: getCarrerasAutenticado
+      parameters:
+        - in: path
+          name: rut
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: email
+          required: true
+          schema:
+            type: string
+            format: email
+        - in: query
+          name: password
+          required: true
+          schema:
+            type: string
+            format: password
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Datos de carrera
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerDetailsResponse'
+        '400':
+          description: Falta email o password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    LoginResponse:
+      type: object
+      properties:
+        rut:
+          type: string
+          description: RUT del usuario autenticado, si está disponible
+        token:
+          type: string
+          nullable: true
+          description: Token opcional que podría emitirse además de cookie HttpOnly
+        meta:
+          $ref: '#/components/schemas/Meta'
+
+    CareerDetailsResponse:
+      type: object
+      required: [rut, carreras]
+      properties:
+        rut:
+          type: string
+        carreras:
+          type: array
+          items:
+            $ref: '#/components/schemas/Carrera'
+        meta:
+          $ref: '#/components/schemas/Meta'
+
+    Carrera:
+      type: object
+      required: [codigo, nombre]
+      properties:
+        codigo:
+          type: string
+          example: "8266"
+        nombre:
+          type: string
+          example: "ITI"
+        catalogo:
+          type: string
+          nullable: true
+          example: "202410"
+
+    Meta:
+      type: object
+      description: Información adicional opcional
+      properties:
+        source:
+          type: string
+          example: puclaro.ucn.cl
+        fetchedAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        detalle:
+          type: string
+          nullable: true
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: ucn_session
+      description: Cookie de sesión HttpOnly establecida por /login o por el backend origen
+
