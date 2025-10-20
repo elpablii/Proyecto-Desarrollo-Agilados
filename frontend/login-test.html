@@ -3,20 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ucn login</title>
+    <title>ucn login - Test</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Solo estilos mínimos para el logo */
-        .logo {
-            border: 2px solid black;
-            box-shadow: 5px 5px 5px #888888;
-        }
-    </style>
 </head>
 <body class="min-h-screen flex flex-col" >
     <header class="flex flex-col items-center justify-center bg-blue-900 text-white py-4 shadow-md">
         <img class="w-16 h-16 mb-2 " src="/Escudo-UCN-Full-Color.png" alt="no foto ucn">
-        <h1 class="text-xl font-bold hover:text-gray-300 hover:pointer ">Bienvenido a UCN</h1>
+        <h1 class="text-xl font-bold hover:text-gray-300 hover:pointer ">Bienvenido a UCN - Test</h1>
     </header>
     <main class="flex-1 flex flex-col items-center justify-center px-4 h-screen bg-cover bg-center bg-no-repeat bg-[url(/Coquimbo-ok.jpg)]">
         
@@ -28,13 +21,27 @@
                 <input type="password" id="password" name="password" required class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 rounded transition-colors">Iniciar sesión</button>
             </form>
+            
+            <div class="mt-4 text-center space-y-2">
+                <div>
+                    <a href="debug-login.html" class="text-blue-500 hover:text-blue-700 text-sm">Debug Login</a> | 
+                    <a href="login-temp.html" class="text-blue-500 hover:text-blue-700 text-sm">Login Simple</a>
+                </div>
+                <div>
+                    <a href="login.html" class="text-blue-500 hover:text-blue-700 text-sm">Login Original</a>
+                </div>
+            </div>
         </div>
     </main>
     <footer class="bg-gray-800 text-white text-center py-4 flex justify-center gap-5">
         <h3>@bySepaxl</h3>
         <img class="size-12 rounded-md " src="/rat-dancing-meme.gif" alt="rata bailando">
     </footer>
-    <script type="module" src="loginFile.js"></script>
+    
+    <!-- Cargar el cliente de autenticación primero -->
+    <script src="authClient-simple.js"></script>
+    <!-- Luego cargar el login -->
+    <script src="loginFile-simple.js"></script>
     
 </body>
 </html>

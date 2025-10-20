@@ -1,19 +1,42 @@
+import { authClient } from './authClient.js';
+
 const logoutButton = document.getElementById('logout');
 
+/**
+ * Función para cerrar sesión de forma segura
+ * @param {string} redirectUrl - URL a la que redirigir después del logout
+ */
+export async function salirLogout(redirectUrl = "./login.html") {
+    try {
+        // Mostrar indicador de carga
+        if (logoutButton) {
+            logoutButton.disabled = true;
+            logoutButton.textContent = "Cerrando sesión...";
+        }
 
-
-export async function salirLogout(directo ,direccion = "./login.html" ) {
-    localStorage.clear();
-    // Si tienes un endpoint /logout en el backend, puedes llamarlo aquí
-    // await fetch('http://localhost:3001/logout', { method: 'POST', credentials: 'include' });
-    alert('HAS CERRADO SESION EXITOSAMENTE');
-    window.location.href = direccion || directo;
+        // Cerrar sesión usando el cliente de autenticación
+        const success = await authClient.logout();
+        
+        if (success) {
+            alert('Has cerrado sesión exitosamente');
+        } else {
+            alert('Sesión cerrada localmente (error de conexión)');
+        }
+        
+        // Redirigir al login
+        window.location.href = redirectUrl;
+        
+    } catch (error) {
+        console.error('Error durante el logout:', error);
+        alert('Error al cerrar sesión, pero se ha limpiado la sesión local');
+        window.location.href = redirectUrl;
+    }
 }
 
-logoutButton.addEventListener('click', (event) => {
-     const valor = event.target.dataset.id; 
-    console.log("conchetumare")
-    // ---- LÍNEA CLAVE DE DEPURACIÓN ----
-    console.log("Se intentará navegar con este valor:", valor);
-    salirLogout()
-});
+// Event listener para el botón de logout
+if (logoutButton) {
+    logoutButton.addEventListener('click', async (event) => {
+        event.preventDefault();
+        await salirLogout();
+    });
+}

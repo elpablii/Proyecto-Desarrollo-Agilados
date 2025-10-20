@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login - UCN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold text-center mb-6">Debug Login</h1>
+        
+        <form id="debug-form" class="space-y-4">
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700">Email:</label>
+                <input type="email" id="email" name="email" required 
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">Contraseña:</label>
+                <input type="password" id="password" name="password" required 
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <button type="submit" id="login-btn" 
+                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Iniciar Sesión
+            </button>
+        </form>
+        
+        <div id="debug-info" class="mt-6 p-4 bg-gray-50 rounded-md">
+            <h3 class="font-semibold mb-2">Información de Debug:</h3>
+            <div id="debug-output" class="text-sm text-gray-600">
+                Esperando intento de login...
+            </div>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <a href="login.html" class="text-blue-500 hover:text-blue-700">← Volver al Login Normal</a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { authClient } from './authClient.js';
+        
+        const form = document.getElementById('debug-form');
+        const debugOutput = document.getElementById('debug-output');
+        const loginBtn = document.getElementById('login-btn');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'text-red-600' : type === 'success' ? 'text-green-600' : 'text-blue-600';
+            debugOutput.innerHTML += `<div class="${color}">[${timestamp}] ${message}</div>`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Iniciando sesión...';
+            debugOutput.innerHTML = '';
+            
+            log('Iniciando proceso de login...');
+            log(`Email: ${email}`);
+            log(`Password: ${password ? '***' : 'VACÍO'}`);
+            
+            try {
+                // Probar conexión básica al backend
+                log('Probando conexión al backend...');
+                const testResponse = await fetch('http://localhost:3001/auth/status', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                log(`Backend responde: ${testResponse.status} ${testResponse.statusText}`);
+                
+                // Intentar login
+                log('Intentando login...');
+                const result = await authClient.login(email, password);
+                
+                if (result.success) {
+                    log('¡Login exitoso!', 'success');
+                    log(`RUT: ${result.rut}`, 'success');
+                    log(`Expira: ${result.expiresAt}`, 'success');
+                    
+                    // Verificar autenticación
+                    log('Verificando autenticación...');
+                    const isAuth = await authClient.isAuthenticated();
+                    log(`Autenticado: ${isAuth}`, isAuth ? 'success' : 'error');
+                    
+                    if (isAuth) {
+                        setTimeout(() => {
+                            window.location.href = './dePrueba.html';
+                        }, 2000);
+                    }
+                }
+                
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'error');
+                
+                // Intentar login directo al backend para comparar
+                log('Probando login directo al backend...');
+                try {
+                    const directResponse = await fetch('http://localhost:3001/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ email, password })
+                    });
+                    
+                    const directData = await directResponse.json();
+                    log(`Respuesta directa: ${JSON.stringify(directData)}`);
+                    
+                } catch (directError) {
+                    log(`Error en login directo: ${directError.message}`, 'error');
+                }
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Iniciar Sesión';
+            }
+        });
+        
+        // Verificar estado inicial
+        log('Verificando estado inicial...');
+        authClient.checkExistingSession().then(hasSession => {
+            log(`Sesión existente: ${hasSession}`);
+        });
+    </script>
+</body>
+</html>

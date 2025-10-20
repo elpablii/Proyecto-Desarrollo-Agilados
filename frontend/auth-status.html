@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Autenticación - UCN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Estado de Autenticación</h1>
+        
+        <div class="max-w-2xl mx-auto space-y-6">
+            <!-- Información de SessionStorage -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">SessionStorage</h2>
+                <div id="session-info" class="space-y-2">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Estado de Autenticación -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">Estado de Autenticación</h2>
+                <div id="auth-status" class="space-y-2">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Pruebas de API -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">Pruebas de API</h2>
+                <div class="space-y-4">
+                    <button id="test-auth" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                        Probar Autenticación
+                    </button>
+                    <button id="test-backend" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                        Probar Backend
+                    </button>
+                    <button id="clear-session" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+                        Limpiar Sesión
+                    </button>
+                </div>
+                <div id="test-results" class="mt-4 p-4 bg-gray-50 rounded">
+                    <!-- Resultados de pruebas -->
+                </div>
+            </div>
+            
+            <!-- Navegación -->
+            <div class="text-center space-x-4">
+                <a href="login.html" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Login</a>
+                <a href="dePrueba.html" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Página Principal</a>
+                <a href="carreras/carrerasUsuario.html" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">Carreras</a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { authClient } from './authClient.js';
+        
+        const sessionInfo = document.getElementById('session-info');
+        const authStatus = document.getElementById('auth-status');
+        const testResults = document.getElementById('test-results');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'text-red-600' : type === 'success' ? 'text-green-600' : 'text-blue-600';
+            testResults.innerHTML += `<div class="${color}">[${timestamp}] ${message}</div>`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function updateSessionInfo() {
+            const userRut = sessionStorage.getItem('userRut');
+            const loginTime = sessionStorage.getItem('loginTime');
+            const sessionExpires = sessionStorage.getItem('sessionExpires');
+            
+            sessionInfo.innerHTML = `
+                <div><strong>RUT:</strong> ${userRut || 'No encontrado'}</div>
+                <div><strong>Login Time:</strong> ${loginTime ? new Date(parseInt(loginTime)).toLocaleString() : 'No encontrado'}</div>
+                <div><strong>Expira:</strong> ${sessionExpires ? new Date(sessionExpires).toLocaleString() : 'No encontrado'}</div>
+                <div><strong>Válido:</strong> ${sessionExpires && new Date(sessionExpires) > new Date() ? 'Sí' : 'No'}</div>
+            `;
+        }
+        
+        async function updateAuthStatus() {
+            try {
+                const isAuth = await authClient.isAuthenticated();
+                const currentUser = authClient.getCurrentUser();
+                
+                authStatus.innerHTML = `
+                    <div><strong>Autenticado:</strong> <span class="${isAuth ? 'text-green-600' : 'text-red-600'}">${isAuth ? 'Sí' : 'No'}</span></div>
+                    <div><strong>Usuario Actual:</strong> ${currentUser || 'No encontrado'}</div>
+                `;
+            } catch (error) {
+                authStatus.innerHTML = `
+                    <div><strong>Error:</strong> <span class="text-red-600">${error.message}</span></div>
+                `;
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('test-auth').addEventListener('click', async () => {
+            log('Probando autenticación...');
+            try {
+                const isAuth = await authClient.isAuthenticated();
+                log(`Resultado: ${isAuth ? 'Autenticado' : 'No autenticado'}`, isAuth ? 'success' : 'error');
+                await updateAuthStatus();
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        });
+        
+        document.getElementById('test-backend').addEventListener('click', async () => {
+            log('Probando conexión al backend...');
+            try {
+                const response = await fetch('http://localhost:3001/auth/status', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                log(`Backend responde: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Datos: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    log(`Error del backend: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`Error de conexión: ${error.message}`, 'error');
+            }
+        });
+        
+        document.getElementById('clear-session').addEventListener('click', () => {
+            sessionStorage.clear();
+            localStorage.clear();
+            log('Sesión limpiada', 'success');
+            updateSessionInfo();
+            updateAuthStatus();
+        });
+        
+        // Actualizar información al cargar
+        updateSessionInfo();
+        updateAuthStatus();
+        
+        // Actualizar cada 5 segundos
+        setInterval(() => {
+            updateSessionInfo();
+            updateAuthStatus();
+        }, 5000);
+    </script>
+</body>
+</html>

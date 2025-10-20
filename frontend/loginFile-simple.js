@@ -1,5 +1,4 @@
-import { authClient } from './authClient.js';
-
+// Versión simplificada del login que usa el cliente simplificado
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("login-form");
 
@@ -35,6 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.textContent = "Iniciando sesión...";
 
         try {
+            console.log('Intentando login con authClient...');
             const result = await authClient.login(username, password);
             
             if (result.success) {

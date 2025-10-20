@@ -1,5 +1,4 @@
-import { authClient } from './authClient.js';
-
+// Versión simplificada sin módulos para diagnosticar
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("login-form");
 
@@ -7,14 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("Formulario no encontrado. Asegúrate de que el formulario tenga el id 'login-form'.");
         return;
     }
-
-    // Verificar si ya hay una sesión válida
-    authClient.checkExistingSession().then(hasSession => {
-        if (hasSession) {
-            console.log('Sesión existente encontrada, redirigiendo...');
-            window.location.href = "./dePrueba.html";
-        }
-    });
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -35,9 +26,30 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.textContent = "Iniciando sesión...";
 
         try {
-            const result = await authClient.login(username, password);
+            console.log('Intentando login con:', username);
             
-            if (result.success) {
+            const response = await fetch("http://localhost:3001/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ email: username, password }),
+            });
+            
+            console.log('Respuesta del servidor:', response.status, response.statusText);
+            
+            const data = await response.json();
+            console.log('Datos recibidos:', data);
+            
+            if (data.error) {
+                alert("Credenciales incorrectas. Por favor, verifica tu email y contraseña.");
+            } else {
+                // Almacenar en sessionStorage
+                sessionStorage.setItem('userRut', data.rut);
+                sessionStorage.setItem('loginTime', Date.now().toString());
+                if (data.meta && data.meta.sessionExpires) {
+                    sessionStorage.setItem('sessionExpires', data.meta.sessionExpires);
+                }
+                
                 alert("¡Login exitoso! Redirigiendo...");
                 window.location.href = "./dePrueba.html";
             }

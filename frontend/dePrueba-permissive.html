@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document - Permissive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex flex-col" >
+    <header class = " grid bg-blue-500 w-full grid-flow-col pb-3 justify-between" id = "cabezon">
+        <div>
+            <img src="/Escudo-UCN-Full-Color.png" alt="Escudo-UCN-Full-Color"
+            class = "w-10 h-10 mt-2 ml-2 ">
+
+        </div>
+
+
+        <div id="saludo-usuario">
+            
+        </div>
+        <button id ="logout" class = "cursor-pointer border border-black hover:bg-blue-600 
+        rounded-sm text-white mt-3 transition duration-300 px-2 mr-2">
+            cerrar sesion
+        </button>
+        <script type="module" src="logout.js"></script>
+    </header>
+
+    <main>
+        <div id="lista-de-opciones" class="p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Opciones Disponibles</h2>
+            
+            <div class="space-y-4">
+                <a href="/frontend/carreras/carrerasUsuario.html" 
+                   class="block bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-center">
+                    Consultar Carreras (Original)
+                </a>
+                
+                <a href="/frontend/auth-status.html" 
+                   class="block bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-center">
+                    Estado de Autenticación
+                </a>
+                
+                <a href="/frontend/dePrueba.html" 
+                   class="block bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-center">
+                    Página Principal (Original)
+                </a>
+            </div>
+            
+            <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h3 class="font-semibold text-yellow-800 mb-2">Versión Permisiva</h3>
+                <p class="text-yellow-700 text-sm">
+                    Esta página usa el cliente de autenticación permisivo que es más tolerante a errores de red.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="manejoDatos-permissive.js"></script>
+</body>
+</html>

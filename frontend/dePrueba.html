@@ -26,11 +26,32 @@
 </header>
 
 <main>
-    <div id="lista-de-opciones">
+    <div id="lista-de-opciones" class="p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Opciones Disponibles</h2>
         
-        <a href="/frontend/carreras/carrerasUsuario.html">
-            Consultar carreras
-        </a>
+        <div class="space-y-4">
+            <a href="/frontend/carreras/carrerasUsuario.html" 
+               class="block bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-center">
+                Consultar Carreras (Original)
+            </a>
+            
+            <a href="/frontend/carreras/carrerasUsuario-tolerant.html" 
+               class="block bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-center">
+                Consultar Carreras (Tolerante)
+            </a>
+            
+            <a href="/frontend/auth-status.html" 
+               class="block bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-center">
+                Estado de Autenticación
+            </a>
+        </div>
+        
+        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 class="font-semibold text-blue-800 mb-2">Recomendación</h3>
+            <p class="text-blue-700 text-sm">
+                Si tienes problemas con la versión original, prueba la versión "Tolerante" que es más resistente a errores de red.
+            </p>
+        </div>
     </div>
 </main>
 

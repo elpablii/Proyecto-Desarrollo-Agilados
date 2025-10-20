@@ -1,6 +1,6 @@
-import {saludoUsuario} from '../manejoDatos.js';
+import {saludoUsuario} from '../manejoDatos-tolerant.js';
 import { salirLogout } from '../logout.js';
-import { authClient } from '../authClient.js';
+import { authClient } from '../authClient-tolerant.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Verificar autenticación

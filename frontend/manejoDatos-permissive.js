@@ -1,4 +1,4 @@
-import { authClient } from './authClient.js';
+import { authClient } from './authClient-permissive.js';
 
 export function saludoUsuario(rut) {
     if (!rut) return; // Si no hay rut, no hagas nada.
@@ -19,7 +19,7 @@ export function saludoUsuario(rut) {
 // 2. EJECUTA la lógica inicial solo cuando el DOM esté listo.
 // Esta parte se encarga de mostrar el saludo la primera vez que la página carga.
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log('Iniciando verificación de autenticación...');
+    console.log('Iniciando verificación de autenticación (versión permisiva)...');
     
     // Verificar autenticación antes de mostrar el saludo
     try {
