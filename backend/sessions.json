@@ -1,0 +1,11 @@
+[
+  {
+    "id": "83be425a0c17d61a0a83eda0a7436b2b29fbdd31e5321c0a3870b1f16852ba00",
+    "userId": "222222222",
+    "email": "maria@example.com",
+    "createdAt": 1760984522042,
+    "lastActivity": 1760984522042,
+    "expiresAt": 1761070922042,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0"
+  }
+]

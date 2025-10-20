@@ -278,13 +278,23 @@ class AuthClient {
         try {
             const response = await fetch(url, authOptions);
             
-            // Si la respuesta es 401, la sesión ha expirado
-            if (response.status === 401) {
-                console.log('Sesión expirada en el servidor');
-                this.handleSessionExpired();
-                throw new Error('Sesión expirada');
-            }
-            
+                // Si la respuesta es 401, verificar antes si la sesión local sigue siendo válida.
+                if (response.status === 401) {
+                    console.log('Backend devolvió 401. Comprobando estado local de la sesión...');
+                    const sessionExpires = sessionStorage.getItem('sessionExpires');
+                    if (sessionExpires && new Date(sessionExpires) > new Date()) {
+                        // La sesión local todavía está vigente -> no forzar logout automático.
+                        console.log('La sesión local no ha expirado pero el backend devolvió 401. Manteniendo sesión local (fallback de desarrollo).');
+                        // Devolver la respuesta 401 al llamador para que maneje el error sin redirigir inmediatamente.
+                        return response;
+                    }
+
+                    // Si la sesión local también expiró, proceder a cerrar sesión y redirigir.
+                    console.log('La sesión local ha expirado o no existe. Cerrando sesión.');
+                    this.handleSessionExpired();
+                    throw new Error('Sesión expirada');
+                }
+                
             return response;
         } catch (error) {
             console.error('Error en petición autenticada:', error);
