@@ -223,7 +223,8 @@ function mostrarMensaje(mensaje) {
 // Event listeners
 const logoutButton = document.getElementById('logout');
 logoutButton.addEventListener('click', () => {
-    salirLogout('../../login.html');
+    // Usar la ruta por defecto de `salirLogout` para evitar errores de path
+    salirLogout();
 });
 
 // Botón para recargar datos

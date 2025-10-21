@@ -37,6 +37,10 @@ class AuthClient {
             sessionStorage.setItem('userRut', data.rut);
             sessionStorage.setItem('loginTime', Date.now().toString());
             sessionStorage.setItem('sessionExpires', data.meta.sessionExpires);
+            // Si el backend devolvió un token (fallback), guardarlo para enviar en headers
+            if (data.token) {
+                sessionStorage.setItem('sessionToken', data.token);
+            }
 
             // Iniciar verificación periódica de sesión
             this.startSessionMonitoring();
@@ -256,13 +260,21 @@ class AuthClient {
      * @returns {Object} Opciones de fetch con autenticación
      */
     getAuthenticatedFetchOptions(options = {}) {
+        const token = sessionStorage.getItem('sessionToken');
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+
+        // Si existe token en sessionStorage, usar Authorization header como fallback
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         return {
             ...options,
             credentials: 'include', // Incluir cookies de sesión
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            }
+            headers
         };
     }
 

@@ -49,6 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (data.meta && data.meta.sessionExpires) {
                     sessionStorage.setItem('sessionExpires', data.meta.sessionExpires);
                 }
+                if (data.token) {
+                    sessionStorage.setItem('sessionToken', data.token);
+                }
                 
                 alert("¡Login exitoso! Redirigiendo...");
                 window.location.href = "./dePrueba.html";

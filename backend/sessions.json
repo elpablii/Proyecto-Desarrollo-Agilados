@@ -1,20 +1,67 @@
 [
   {
-    "id": "83be425a0c17d61a0a83eda0a7436b2b29fbdd31e5321c0a3870b1f16852ba00",
-    "userId": "222222222",
-    "email": "maria@example.com",
-    "createdAt": 1760984522042,
-    "lastActivity": 1760984522042,
-    "expiresAt": 1761070922042,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0"
-  },
-  {
     "id": "f79954d0a992ea06ed7ced4140a8def15361270de4ddfbcefad43ababcc47c62",
     "userId": "333333333",
     "email": "ximena@example.com",
     "createdAt": 1760999807497,
     "lastActivity": 1760999807497,
     "expiresAt": 1761086207497,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "3e5f2c3bc812ea32633bebcf10d434b9292dee47fc16dc93ba1cc0bf08137b91",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "createdAt": 1761068403473,
+    "lastActivity": 1761068403473,
+    "expiresAt": 1761154803473,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "f29353395af1f40ba5c0e8bf0eddca8bfbebcefb136625b6925d3d666c5ef087",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "createdAt": 1761068517551,
+    "lastActivity": 1761068517551,
+    "expiresAt": 1761154917551,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "d2389215630e949e908b6f6e3a75825ba573e6d2755c7735b6b4cbddaa06da0a",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "createdAt": 1761068609594,
+    "lastActivity": 1761068609594,
+    "expiresAt": 1761155009594,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "fb3181784762fa84698922879990bbce930755951941f4cfb732a4d058e19ee3",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "createdAt": 1761069490825,
+    "lastActivity": 1761069490825,
+    "expiresAt": 1761155890825,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "ba42c260e90bd6c4f48c438b32ee78301faaa4c1b38124540ff3823eaeac217c",
+    "token": "fe4fe114f7bf2323b54c5e947070ed55ca50d6ad4d48e75732b3ec65850e6f6d",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "createdAt": 1761069745757,
+    "lastActivity": 1761069753291,
+    "expiresAt": 1761156145757,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "f3f9abba2469f90e1a2969fc8b7d7a39751748c31311f00dd53d8fbc3c158127",
+    "token": "cf0fe606cd59244b360bdbfc429d43eb05441f60d726594072466dbb783b1ffa",
+    "userId": "222222222",
+    "email": "maria@example.com",
+    "createdAt": 1761071001849,
+    "lastActivity": 1761071005570,
+    "expiresAt": 1761157401849,
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
   }
 ]

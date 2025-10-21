@@ -65,11 +65,28 @@ app.use((req, res, next) => {
 
 // Middleware de autenticación
 const authenticateSession = (req, res, next) => {
-    const sessionId = req.cookies.ucn_session;
+    // Primero intentar cookie de sesión
+    let sessionId = req.cookies.ucn_session;
     console.log(`[AUTH DEBUG] Cookies recibidas:`, req.cookies);
-    
+
+    // Si no hay cookie, permitir token por header Authorization: Bearer <token>
     if (!sessionId) {
-        console.log('[AUTH DEBUG] No se encontró cookie ucn_session');
+        const authHeader = req.get('Authorization') || req.get('authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.slice(7);
+            // Buscar sesión por token
+            for (const [id, s] of sessions.entries()) {
+                if (s.token === token) {
+                    sessionId = id;
+                    break;
+                }
+            }
+            console.log('[AUTH DEBUG] Buscando sesión por token ->', !!sessionId);
+        }
+    }
+
+    if (!sessionId) {
+        console.log('[AUTH DEBUG] No se encontró cookie ucn_session ni token Authorization');
         return res.status(401).json({ error: 'Sesión no encontrada' });
     }
     
@@ -94,10 +111,12 @@ const authenticateSession = (req, res, next) => {
 // Función para crear sesión segura
 const createSecureSession = (userData) => {
     const sessionId = crypto.randomBytes(32).toString('hex');
+    const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 horas
     
     const session = {
         id: sessionId,
+        token: token,
         userId: userData.rut,
         email: userData.email,
         createdAt: Date.now(),
@@ -180,15 +199,21 @@ app.post('/login', async (req, res) => {
         });
         
         // Configurar cookie segura
+        // Nota: para desarrollo local (orígenes cruzados como localhost:5500 o 127.0.0.1:5500)
+        // es necesario permitir el envío de cookies en peticiones cross-site.
+        // En producción se recomienda SameSite='lax' o 'strict' con secure=true.
+        // Aquí forzamos SameSite='None' y secure=false en desarrollo para facilitar pruebas.
         const cookieOptions = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
-            sameSite: 'lax',
+            // For development only: do not force Secure so browsers on http://localhost can accept the cookie.
+            // In production, set secure: true and remove SameSite=None if not needed.
+            secure: false,
+            sameSite: 'none',
             maxAge: 24 * 60 * 60 * 1000, // 24 horas
             path: '/'
         };
         
-        res.cookie('ucn_session', sessionId, cookieOptions);
+    res.cookie('ucn_session', sessionId, cookieOptions);
         
         // Log de login exitoso
         console.log(`[LOGIN SUCCESS] Email: ${email}, RUT: ${data.rut}, IP: ${clientIP}, Session: ${sessionId}`);
@@ -196,7 +221,8 @@ app.post('/login', async (req, res) => {
         // Respuesta sin información sensible
         res.json({
             rut: data.rut,
-            token: null, // No enviar token en la respuesta
+            // Devolver token también para soportar autenticación por header (fallback en desarrollo)
+            token: sessionId ? sessions.get(sessionId).token : null,
             meta: {
                 source: 'puclaro.ucn.cl',
                 fetchedAt: new Date().toISOString(),
