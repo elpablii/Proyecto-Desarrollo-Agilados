@@ -7,5 +7,14 @@
     "lastActivity": 1760984522042,
     "expiresAt": 1761070922042,
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0"
+  },
+  {
+    "id": "f79954d0a992ea06ed7ced4140a8def15361270de4ddfbcefad43ababcc47c62",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "createdAt": 1760999807497,
+    "lastActivity": 1760999807497,
+    "expiresAt": 1761086207497,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
   }
 ]
