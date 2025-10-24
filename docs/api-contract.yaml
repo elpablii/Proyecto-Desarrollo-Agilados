@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
-  title: API Intermedia - Detalles de Carrera por Usuario
-  version: 1.0.0
+  title: API Intermedia - Avance Curricular Estudiantes UCN
+  version: 1.1.0 # Updated version
   description: |
-    Contrato de los endpoints expuestos por el backend intermedio.
-    La respuesta de carreras se normaliza como { rut, carreras: [...], meta? }.
+    Contrato de los endpoints expuestos por el backend intermedio (proxy) que consume servicios UCN.
+    Las respuestas se normalizan cuando es posible.
 
 servers:
   - url: http://localhost:3001
@@ -12,19 +12,22 @@ servers:
 
 tags:
   - name: Auth
-    description: Inicio de sesión y manejo de sesión
+    description: Inicio/cierre de sesión y estado de autenticación.
   - name: Carreras
-    description: Consulta de detalles de carrera por RUT
+    description: Consulta de carreras asociadas a un estudiante.
+  - name: Malla Curricular
+    description: Consulta de la estructura de asignaturas de una carrera.
+  - name: Avance Curricular
+    description: Consulta del estado (aprobado/reprobado) de asignaturas para un estudiante.
 
 paths:
   /login:
     post:
       tags: [Auth]
-      summary: Inicia sesión contra servicio UCN y propaga cookie de sesión
+      summary: Inicia sesión contra servicio UCN y establece cookie de sesión.
       description: |
-        Autentica al usuario con email y password. Si el backend origen entrega cookie
-        de sesión, el proxy la reenviará al cliente. Recomendado usar cookie HttpOnly,
-        Secure, SameSite=Lax/Strict. La respuesta incluye datos mínimos del usuario si están disponibles.
+        Autentica usando email y password. Establece una cookie `ucn_session` (HttpOnly, SameSite=Lax/None)
+        y devuelve el RUT y un token Bearer opcional como fallback.
       operationId: login
       requestBody:
         required: true
@@ -37,196 +40,246 @@ paths:
                 email:
                   type: string
                   format: email
+                  example: "juan@example.com"
                 password:
                   type: string
                   format: password
+                  example: "1234"
       responses:
         '200':
-          description: Autenticación exitosa
+          description: Autenticación exitosa.
           headers:
             Set-Cookie:
-              description: Cookie de sesión reenviada si el backend origen la entrega (HttpOnly recomendada)
+              description: Cookie `ucn_session` HttpOnly.
               schema:
                 type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
-              examples:
-                ejemplo:
-                  summary: Login correcto con cookie HttpOnly
-                  value:
-                    rut: "12.345.678-9"
-                    token: null
-                    meta:
-                      source: puclaro.ucn.cl
-                      fetchedAt: "2025-09-29T12:34:56Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
-          description: Credenciales inválidas
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalido:
-                  value:
-                    error: "Credenciales inválidas"
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          description: Error interno o en servicio externo
+          $ref: '#/components/responses/ServerError'
+        '502':
+           $ref: '#/components/responses/BadGateway'
+
+  /logout:
+    post:
+      tags: [Auth]
+      summary: Cierra la sesión actual.
+      description: Elimina la sesión del servidor y pide al cliente borrar la cookie `ucn_session`.
+      operationId: logout
+      security:
+        - cookieAuth: []
+        - bearerAuth: [] # Allow logout via token too
+      responses:
+        '200':
+          description: Sesión cerrada exitosamente.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                externo:
-                  value:
-                    error: "Error al conectar con UCN"
-                    detalle: "ECONNREFUSED"
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Sesión cerrada exitosamente"
+        '500':
+          $ref: '#/components/responses/ServerError' # Should ideally always succeed locally
+
+  /auth/status:
+    get:
+      tags: [Auth]
+      summary: Verifica si la sesión actual es válida.
+      description: Requiere una cookie `ucn_session` válida o un token Bearer válido.
+      operationId: getAuthStatus
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sesión válida.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authenticated:
+                    type: boolean
+                    example: true
+                  userId:
+                    type: string
+                    description: RUT del usuario.
+                    example: "11188222333"
+                  expiresAt:
+                    type: string
+                    format: date-time
+                  lastActivity:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized' # If session is invalid/expired
+        '500':
+          $ref: '#/components/responses/ServerError'
 
   /carreras/{rut}:
     get:
       tags: [Carreras]
-      summary: Obtiene las carreras para un RUT
+      summary: Obtiene las carreras asociadas al RUT del usuario autenticado.
       description: |
-        Intenta múltiples endpoints del origen. Si no hay datos válidos, devuelve un payload de ejemplo.
-        Respuesta normalizada en el esquema `CareerDetailsResponse`.
+        Requiere autenticación. Valida que el {rut} solicitado coincida con el usuario de la sesión.
+        Actualmente devuelve datos de fallback porque el endpoint original requiere re-autenticación no viable con solo la sesión.
       operationId: getCarrerasPorRut
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
       parameters:
         - in: path
           name: rut
           required: true
           schema:
             type: string
-          description: RUT del usuario (sin puntos, con guion)
+            example: "11188222333"
+          description: RUT del estudiante.
+      responses:
+        '200':
+          description: Lista de carreras del estudiante (o fallback).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerDetailsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden' # If RUT doesn't match session
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # --- NEW ENDPOINTS ---
+  /malla/{mallaId}:
+    get:
+      tags: [Malla Curricular]
+      summary: Obtiene la estructura de asignaturas (malla) para un código de carrera y catálogo.
+      description: |
+        Proxy para el servicio `losvilos.ucn.cl`. No requiere autenticación de usuario final,
+        pero usa un token fijo `X-HAWAII-AUTH` internamente.
+      operationId: getMallaPorId
+      parameters:
+        - in: path
+          name: mallaId
+          required: true
+          schema:
+            type: string
+            example: "8606-201610"
+          description: Identificador de la malla, formato {codigoCarrera}-{catalogo}.
+      responses:
+        '200':
+          description: Malla curricular encontrada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  malla:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AsignaturaMalla'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+           $ref: '#/components/responses/BadRequest' # Invalid mallaId format
+        '404':
+           $ref: '#/components/responses/NotFound' # If external service returns 404
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '502':
+           $ref: '#/components/responses/BadGateway' # External service error
+
+  /avance/{rut}/{codigoCarrera}:
+    get:
+      tags: [Avance Curricular]
+      summary: Obtiene el avance (estado de asignaturas) para un estudiante en una carrera.
+      description: |
+        Requiere autenticación. Valida que el {rut} solicitado coincida con el usuario de la sesión.
+        Proxy para el servicio `puclaro.ucn.cl`.
+      operationId: getAvancePorRutCarrera
       security:
         - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: rut
+          required: true
+          schema:
+            type: string
+            example: "11188222333"
+          description: RUT del estudiante.
+        - in: path
+          name: codigoCarrera
+          required: true
+          schema:
+            type: string
+            example: "8606"
+          description: Código de la carrera.
       responses:
         '200':
-          description: Datos de carrera encontrados o datos de ejemplo
+          description: Avance curricular encontrado.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CareerDetailsResponse'
-              examples:
-                ejemplo:
-                  value:
-                    rut: "12.345.678-9"
-                    carreras:
-                      - codigo: "8266"
-                        nombre: "ITI"
-                        catalogo: "202410"
-                      - codigo: "8606"
-                        nombre: "ICCI"
-                        catalogo: "201610"
-                    meta:
-                      source: puclaro.ucn.cl
-                      fetchedAt: "2025-09-29T12:34:56Z"
+                type: object
+                properties:
+                  avance:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RegistroAvance'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden' # RUT doesn't match session
+        '404':
+           $ref: '#/components/responses/NotFound' # Avance no encontrado en servicio externo
         '500':
-          description: Error al obtener datos de carrera
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/ServerError'
+        '502':
+           $ref: '#/components/responses/BadGateway' # External service error
 
+  # --- Deprecated/Alternative ---
+  # These might be removed later if not needed
   /carreras:
     post:
+      deprecated: true
       tags: [Carreras]
-      summary: Obtiene carreras autenticando con email y password en la misma llamada
+      summary: (Obsoleto) Obtiene carreras autenticando en la misma llamada.
+      description: Usar /login y luego GET /carreras/{rut} con la sesión.
       operationId: postCarrerasConCredenciales
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [rut, email, password]
-              properties:
-                rut:
-                  type: string
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  format: password
+        # ... (request body schema)
       responses:
         '200':
-          description: Datos de carrera
+          description: Datos de carrera.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CareerDetailsResponse'
-              examples:
-                ejemplo:
-                  value:
-                    rut: "12.345.678-9"
-                    carreras:
-                      - codigo: "8266"
-                        nombre: "ITI"
-                        catalogo: "202410"
-        '401':
-          description: Credenciales inválidas
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Error interno o en servicio externo
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+        # ... other responses
 
   /carreras-autenticado/{rut}:
     get:
+      deprecated: true
       tags: [Carreras]
-      summary: Obtiene carreras usando credenciales del usuario autenticado
+      summary: (Obsoleto/Inseguro) Obtiene carreras pasando credenciales en query params.
+      description: No usar. Usar GET /carreras/{rut} con la sesión.
       operationId: getCarrerasAutenticado
       parameters:
-        - in: path
-          name: rut
-          required: true
-          schema:
-            type: string
-        - in: query
-          name: email
-          required: true
-          schema:
-            type: string
-            format: email
-        - in: query
-          name: password
-          required: true
-          schema:
-            type: string
-            format: password
-      security:
-        - cookieAuth: []
+        # ... parameters
       responses:
-        '200':
-          description: Datos de carrera
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CareerDetailsResponse'
-        '400':
-          description: Falta email o password
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Credenciales inválidas
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Error interno
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Endpoint no implementado/obsoleto.
 
 components:
   schemas:
@@ -235,11 +288,12 @@ components:
       properties:
         rut:
           type: string
-          description: RUT del usuario autenticado, si está disponible
+          description: RUT del usuario autenticado.
+          example: "11188222333"
         token:
           type: string
           nullable: true
-          description: Token opcional que podría emitirse además de cookie HttpOnly
+          description: Token Bearer opcional (fallback para autenticación por header).
         meta:
           $ref: '#/components/schemas/Meta'
 
@@ -249,14 +303,15 @@ components:
       properties:
         rut:
           type: string
+          example: "11188222333"
         carreras:
           type: array
           items:
-            $ref: '#/components/schemas/Carrera'
+            $ref: '#/components/schemas/CarreraSimple'
         meta:
           $ref: '#/components/schemas/Meta'
 
-    Carrera:
+    CarreraSimple:
       type: object
       required: [codigo, nombre]
       properties:
@@ -271,16 +326,70 @@ components:
           nullable: true
           example: "202410"
 
+    AsignaturaMalla:
+      type: object
+      properties:
+        codigo:
+          type: string
+          example: "DCCB-00107"
+        asignatura:
+          type: string
+          example: "Álgebra I"
+        creditos:
+          type: integer
+          example: 6
+        nivel:
+          type: integer
+          example: 1
+        prereq:
+          type: string
+          nullable: true
+          description: Códigos de prerrequisitos separados por coma.
+          example: "DDOC-00102,SSED-00102"
+
+    RegistroAvance:
+      type: object
+      properties:
+        nrc:
+          type: string
+          example: "21943"
+        period:
+          type: string
+          example: "202320"
+        student:
+          type: string
+          example: "333333333"
+        course:
+          type: string
+          description: Código de la asignatura.
+          example: "ECIN-00704"
+        excluded:
+          type: boolean
+          example: false
+        inscriptionType:
+          type: string
+          example: "REGULAR"
+        status:
+          type: string
+          description: Estado de la asignatura para el estudiante.
+          example: "APROBADO" # Otros: REPROBADO, CURSANDO, INSCRITO, etc.
+
     Meta:
       type: object
-      description: Información adicional opcional
+      description: Información adicional sobre la respuesta.
       properties:
         source:
           type: string
-          example: puclaro.ucn.cl
+          description: Origen principal de los datos.
+          example: "puclaro.ucn.cl"
         fetchedAt:
           type: string
           format: date-time
+          description: Timestamp de cuándo se obtuvieron los datos.
+        sessionExpires:
+           type: string
+           format: date-time
+           description: Timestamp de expiración de la sesión (solo en /login).
 
     ErrorResponse:
       type: object
@@ -288,13 +397,57 @@ components:
       properties:
         error:
           type: string
+          description: Mensaje principal del error.
         detalle:
           type: string
           nullable: true
+          description: Detalles adicionales del error (si aplica).
+
+  responses:
+    BadRequest:
+      description: La solicitud es inválida (ej. formato incorrecto de parámetros).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Autenticación requerida o fallida (sesión inválida/expirada, credenciales incorrectas).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+       description: Autenticado pero no autorizado para acceder al recurso solicitado (ej. RUT no coincide).
+       content:
+         application/json:
+           schema:
+             $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+       description: El recurso solicitado no fue encontrado en el servicio externo.
+       content:
+         application/json:
+           schema:
+             $ref: '#/components/schemas/ErrorResponse'
+    ServerError:
+      description: Error interno en el servidor proxy.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadGateway:
+      description: Error al comunicarse con el servicio externo UCN o respuesta inválida del mismo.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
   securitySchemes:
     cookieAuth:
       type: apiKey
       in: cookie
-      name: ucn_session
-      description: Cookie de sesión HttpOnly establecida por /login o por el backend origen
-
+      name: ucn_session # Nombre de la cookie de sesión
+      description: Cookie HttpOnly establecida por /login.
+    bearerAuth:
+       type: http
+       scheme: bearer
+       description: Token JWT opcional devuelto por /login, usado como fallback si la cookie no funciona (ej. desarrollo cross-site).
