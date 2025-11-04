@@ -3,9 +3,12 @@
  * Maneja el almacenamiento seguro de sesiones y tokens
  */
 
+// *** BUG FIX: Importar API_BASE_URL desde config ***
+import { API_BASE_URL } from './config.js';
+
 class AuthClient {
     constructor() {
-        this.baseUrl = 'http://localhost:3001';
+        this.baseUrl = API_BASE_URL; // *** BUG FIX: Usar constante ***
         this.sessionCheckInterval = null;
         this.sessionTimeout = 24 * 60 * 60 * 1000; // 24 horas
     }
@@ -216,8 +219,8 @@ class AuthClient {
             alert('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
         }
         
-        // Redirigir al login
-        window.location.href = './login.html';
+        // *** CAMBIO: Usar ruta absoluta al login ***
+        window.location.href = '/frontend/login.html';
     }
 
     /**
@@ -334,10 +337,13 @@ export async function initializeAuth() {
     const hasValidSession = await authClient.checkExistingSession();
     if (!hasValidSession) {
         // Redirigir al login si no hay sesión válida
+        // *** CAMBIO: Usar ruta absoluta al login ***
         if (window.location.pathname !== '/frontend/login.html' && 
             !window.location.pathname.includes('login.html')) {
-            window.location.href = './login.html';
+            window.location.href = '/frontend/login.html';
         }
     }
     return hasValidSession;
 }
+
+

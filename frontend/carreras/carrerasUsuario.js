@@ -3,7 +3,7 @@ import { saludoUsuario } from '../manejoDatos.js';
 import { salirLogout } from '../logout.js';
 // Importa el cliente de autenticación
 import { authClient } from '../authClient.js';
-// Importa la URL base de la API
+// *** CAMBIO: Importar la URL base de la API ***
 import { API_BASE_URL } from '../config.js';
 
 /**
@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if (!isAuthenticated) {
         console.log('Usuario no autenticado, redirigiendo al login...');
-        window.location.href = '../../login.html'; // Ajusta la ruta al login si es necesario
+        // *** CAMBIO: Usar ruta absoluta al login ***
+        window.location.href = '/frontend/login.html'; // Ajusta la ruta al login si es necesario
         return;
     }
     
@@ -46,6 +47,7 @@ async function cargarDatosCarrera(rut) {
     try {
         console.log(`Cargando datos de carrera para RUT: ${rut}`);
         // Usar authenticatedFetch para asegurar que la sesión es válida
+        // *** CAMBIO: Usar constante API_BASE_URL ***
         const response = await authClient.authenticatedFetch(`${API_BASE_URL}/carreras/${rut}`, {
             method: 'GET'
         });
@@ -64,7 +66,6 @@ async function cargarDatosCarrera(rut) {
             console.error('Error al obtener datos de carrera:', data.error);
             mostrarError('Error al cargar datos de carrera: ' + data.error, contenedor);
         } else {
-            // *** CORRECCIÓN IMPORTANTE ***
             // Asegurarnos de que `data.rut` exista en la respuesta
             // Si no existe, usamos el `rut` que ya teníamos de la sesión.
             if (!data.rut) {
@@ -112,7 +113,6 @@ function mostrarDatosCarrera(datos) {
 
         // Mostrar cada carrera como un enlace
         datos.carreras.forEach((carrera, index) => {
-            // *** CORRECCIÓN IMPORTANTE ***
             // Pasamos el RUT de `datos.rut` (que viene de la API o del fallback)
             const carreraElement = crearElementoCarrera(carrera, index, datos.rut);
             contenedor.appendChild(carreraElement);
@@ -132,7 +132,6 @@ function mostrarDatosCarrera(datos) {
  * @returns {HTMLElement} - Un elemento <a> que funciona como tarjeta.
  */
 function crearElementoCarrera(carrera, index = 0, rut) {
-    // --- ¡CORRECCIÓN! ---
     // El elemento principal ahora es un <a> en lugar de un <div>
     const link = document.createElement('a');
     
@@ -266,4 +265,6 @@ if (recargarButton) {
         }
     });
 }
+
+
 

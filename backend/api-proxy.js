@@ -143,6 +143,7 @@ const createSecureSession = (userData) => {
         token: token, // Store token in session data
         userId: userData.rut, // Store user identifier (RUT)
         email: userData.email, // Store user email
+        carreras: userData.carreras, // *** CAMBIO: Guardar carreras en sesión ***
         createdAt: Date.now(),
         lastActivity: Date.now(),
         expiresAt: expiresAt,
@@ -227,9 +228,9 @@ app.post('/login', async (req, res) => {
             return res.status(502).json({ error: 'Respuesta no válida del servicio de autenticación (error parse)' });
         }
 
-        // Validate response data structure
-        if (!data || data.error || !data.rut) {
-            const reason = data && data.error ? data.error : 'Respuesta inválida o falta RUT';
+        // *** CAMBIO: Validar que 'carreras' exista en la respuesta ***
+        if (!data || data.error || !data.rut || !data.carreras) { 
+            const reason = data && data.error ? data.error : 'Respuesta inválida o falta RUT/carreras';
             console.log(`[LOGIN FAILED] Email: ${email}, IP: ${clientIP}, Reason: ${reason}`);
             return res.status(401).json({ error: 'Credenciales inválidas', detalle: reason });
         }
@@ -238,6 +239,7 @@ app.post('/login', async (req, res) => {
         const sessionId = createSecureSession({
             rut: data.rut,
             email: email,
+            carreras: data.carreras, // *** CAMBIO: Pasar carreras a la sesión ***
             userAgent: userAgent
         });
 
@@ -394,10 +396,6 @@ app.get('/avance/:rut/:codigoCarrera', authenticateSession, async (req, res) => 
     try {
         const response = await fetch(targetUrl, {
             method: 'GET',
-            // Include session cookies or tokens if the target API requires them?
-            // The example doesn't show this, assuming direct access is possible.
-            // If the target API requires the *same* session established during login,
-            // this proxy might need to manage those external cookies.
         });
 
         if (!response.ok) {
@@ -454,11 +452,11 @@ app.get('/avance/:rut/:codigoCarrera', authenticateSession, async (req, res) => 
 
 // --- Deprecated/Alternative Routes (Keep or remove as needed) ---
 
-// Endpoint para obtener datos de carrera del usuario (protegido) - Original GET /carreras/:rut
-// Kept for compatibility, but might be deprecated if frontend only uses authenticatedFetch
+// *** CAMBIO: Este endpoint ahora lee desde la sesión ***
 app.get('/carreras/:rut', authenticateSession, async (req, res) => {
     const { rut } = req.params;
-    const sessionUserId = req.session.userId; // Get RUT from the authenticated session
+    const sessionUserId = req.session.userId; 
+    const sessionCarreras = req.session.carreras; // *** CAMBIO: Obtener carreras de la sesión ***
 
     // Security check: Ensure the requested RUT matches the session's user ID
     if (normalizeRut(rut) !== normalizeRut(sessionUserId)) {
@@ -466,58 +464,20 @@ app.get('/carreras/:rut', authenticateSession, async (req, res) => {
          return res.status(403).json({ error: 'No autorizado para acceder a estas carreras.' });
     }
 
-    // Use a single known-good endpoint or try multiple as before
-    const targetUrl = `https://puclaro.ucn.cl/eross/avance/login.php?email=${encodeURIComponent(req.session.email)}&password=PLACEHOLDER_IF_NEEDED`; // This endpoint might actually return carreras on login? Needs verification. Or use a dedicated one if available.
-    // NOTE: The login endpoint from the example returns carreras. Reusing it might work,
-    // but relies on sending credentials again which isn't ideal if session is managed by cookie.
-    // If a dedicated /carreras endpoint exists that uses the UCN session, that's better.
-    // For now, let's proxy the login endpoint again as it contains carrera data in the example.
+    console.log(`[CARRERAS] Requesting carreras for ${rut} from session`);
 
-    // Using login endpoint as proxy target based on example response structure
-    const loginUrl = `https://puclaro.ucn.cl/eross/avance/login.php?email=${encodeURIComponent(req.session.email)}&password=DUMMY_PASS_MAYBE?`;
-    // !!! IMPORTANT: This is problematic if password is required and not stored in session.
-    // !!! Using a dummy password will likely fail. This endpoint structure needs clarification.
-    // !!! Assuming for now a direct /carreras endpoint exists or login can be re-used somehow.
-    // !!! Using fallback example data if direct fetch fails.
-
-    console.log(`[CARRERAS] Requesting carreras for ${rut}`);
-
-    // Fallback data if fetch fails
-    const fallbackData = {
-        rut: rut,
-        carreras: [
-            { codigo: "8266", nombre: "ITI-Fallback", catalogo: "202410" },
-            { codigo: "8606", nombre: "ICCI-Fallback", catalogo: "201610" }
-        ],
-         meta: { source: 'fallback-data', fetchedAt: new Date().toISOString() }
-    };
-
-    // Placeholder: Attempt to fetch from a hypothetical careers endpoint or re-login
-    // Since re-login needs password (not stored), we'll just return fallback for now.
-    console.log('[CARRERAS] Returning fallback data as password is not available for re-login.');
-    res.json(fallbackData);
-
-
-    // --- Example if a dedicated /carreras endpoint existed ---
-    /*
-    const carrerasUrl = `https://puclaro.ucn.cl/eross/avance/carreras.php?rut=${rut}`; // Hypothetical
-    try {
-        const response = await fetch(carrerasUrl, { method: 'GET' }); // Add authentication if needed
-        if (!response.ok) { throw new Error(`HTTP ${response.status}`); }
-        const contentType = response.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) { throw new Error('Not JSON'); }
-        const data = await response.json();
-        if (data.error) { throw new Error(data.error); }
+    // *** CAMBIO: Devolver datos desde la sesión ***
+    if (sessionCarreras) {
         res.json({
-            rut: data.rut || rut,
-            carreras: data.carreras || [],
-            meta: { source: 'puclaro.ucn.cl', fetchedAt: new Date().toISOString() }
+            rut: sessionUserId,
+            carreras: sessionCarreras,
+             meta: { source: 'session-cache', fetchedAt: new Date().toISOString() }
         });
-    } catch (err) {
-        console.error(`[CARRERAS ERROR] Failed for ${rut}:`, err);
-        res.status(500).json({ error: 'Error al obtener carreras', detalle: err.message });
+    } else {
+        // This case should ideally not happen if login stores it
+        console.error(`[CARRERAS ERROR] No 'carreras' found in session for user ${sessionUserId}`);
+        res.status(404).json({ error: 'Datos de carrera no encontrados en la sesión.' });
     }
-    */
 });
 
 
@@ -581,3 +541,5 @@ app.listen(PORT, () => console.log(`[INFO] Backend intermedio corriendo en http:
 function normalizeRut(rut) {
     return typeof rut === 'string' ? rut.replace(/[.-]/g, '') : '';
 }
+
+

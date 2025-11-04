@@ -33,7 +33,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
             // Si no está autenticado, redirigir al login
             console.log('Usuario no autenticado, redirigiendo al login...');
-            window.location.href = './login.html';
+            // *** CAMBIO: Usar ruta absoluta al login ***
+            window.location.href = '/frontend/login.html';
         }
     } catch (error) {
         console.error('Error verificando autenticación:', error);
@@ -45,7 +46,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             saludoUsuario(rut);
         } else {
             console.log('No hay datos locales, redirigiendo al login...');
-            window.location.href = './login.html';
+             // *** CAMBIO: Usar ruta absoluta al login ***
+            window.location.href = '/frontend/login.html';
         }
     }
 });
+

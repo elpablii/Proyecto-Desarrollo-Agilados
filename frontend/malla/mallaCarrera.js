@@ -19,7 +19,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const isAuthenticated = await authClient.isAuthenticated();
     if (!isAuthenticated) {
         console.log('Usuario no autenticado, redirigiendo al login...');
-        window.location.href = '../../login.html'; // Ajusta la ruta al login
+         // *** CAMBIO: Usar ruta absoluta al login ***
+        window.location.href = '/frontend/login.html'; // Ajusta la ruta al login
         return;
     }
     
@@ -186,3 +187,7 @@ function mostrarError(mensaje) {
         }
     }
 }
+
+
+
+
