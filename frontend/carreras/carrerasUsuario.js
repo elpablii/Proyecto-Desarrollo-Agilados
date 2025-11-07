@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!isAuthenticated) {
         console.log('Usuario no autenticado, redirigiendo al login...');
         // *** CAMBIO: Usar ruta absoluta al login ***
-        window.location.href = '/frontend/login.html'; // Ajusta la ruta al login si es necesario
+    window.location.href = '/login.html'; // Ajusta la ruta al login si es necesario
         return;
     }
     
@@ -250,7 +250,7 @@ const logoutButton = document.getElementById('logout');
 if (logoutButton) {
     logoutButton.addEventListener('click', () => {
         // Usar la ruta absoluta al login para evitar errores de path
-        salirLogout("/frontend/login.html");
+    salirLogout("/login.html");
     });
 }
 

@@ -27,6 +27,12 @@ app.use(cookieParser()); // Parse cookies
 // Path to the session persistence file
 const SESSIONS_FILE = path.join(__dirname, 'sessions.json');
 
+// Path to projections persistence file (development store)
+const PROYECCIONES_FILE = path.join(__dirname, 'proyecciones.json');
+
+// In-memory projections store (array of {id, userId, codigoCarrera, name, projection, createdAt, updatedAt})
+let proyecciones = [];
+
 // In-memory session store (Map)
 const sessions = new Map();
 
@@ -61,8 +67,56 @@ const saveSessionsToDisk = () => {
     }
 };
 
+// Load projections from disk
+const loadProyeccionesFromDisk = () => {
+    try {
+        if (fs.existsSync(PROYECCIONES_FILE)) {
+            const raw = fs.readFileSync(PROYECCIONES_FILE, 'utf8');
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) proyecciones = parsed;
+            console.log(`[INFO] Cargadas ${proyecciones.length} proyecciones desde disco`);
+        }
+    } catch (err) {
+        console.warn('[WARN] No se pudieron cargar proyecciones desde disco:', err.message);
+    }
+};
+
+// Save projections to disk
+const saveProyeccionesToDisk = () => {
+    try {
+        fs.writeFileSync(PROYECCIONES_FILE, JSON.stringify(proyecciones, null, 2), 'utf8');
+    } catch (err) {
+        console.warn('[WARN] No se pudieron guardar proyecciones en disco:', err.message);
+    }
+};
+
+// Helper: try to load a local fallback malla (specific then generic)
+const getLocalMallaFallback = (mallaId) => {
+    try {
+        const fallbackPath = path.join(__dirname, 'data', 'mallas', `${mallaId}.json`);
+        if (fs.existsSync(fallbackPath)) {
+            const raw = fs.readFileSync(fallbackPath, 'utf8');
+            return { malla: JSON.parse(raw), source: 'local-fallback', path: fallbackPath };
+        }
+    } catch (e) {
+        console.warn('[MALLA FALLBACK] Error leyendo fallback específico:', e.message);
+    }
+    try {
+        const genericFallback = path.join(__dirname, '..', 'frontend', 'malla', 'malla-fallback.json');
+        if (fs.existsSync(genericFallback)) {
+            const raw2 = fs.readFileSync(genericFallback, 'utf8');
+            return { malla: JSON.parse(raw2), source: 'frontend-generic-fallback', path: genericFallback };
+        }
+    } catch (e) {
+        console.warn('[MALLA FALLBACK] Error leyendo fallback genérico:', e.message);
+    }
+    return null;
+};
+
 // Initial load of sessions
 loadSessionsFromDisk();
+// Initial load of projections
+loadProyeccionesFromDisk();
 
 // --- Middleware ---
 
@@ -73,6 +127,12 @@ app.use((req, res, next) => {
     const ip = req.ip || req.connection.remoteAddress;
     console.log(`[REQ] [${timestamp}] ${req.method} ${req.path} - IP: ${ip}`);
     next(); // Continue to next middleware/route
+});
+
+// Start the server
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`[INFO] Backend intermedio corriendo en http://localhost:${PORT}`);
 });
 
 // Authentication middleware
@@ -244,22 +304,16 @@ app.post('/login', async (req, res) => {
         });
 
         // Set secure session cookie
+        const isProd = process.env.NODE_ENV === 'production';
+        // Use Lax by default to improve compatibility in local HTTP development.
+        // In production (HTTPS) cookies will be secure.
         const cookieOptions = {
-            httpOnly: true, // Prevent client-side script access
-            // Secure should be true in production (HTTPS)
-            secure: process.env.NODE_ENV === 'production',
-            // SameSite=Lax is generally recommended for security
-            sameSite: process.env.NODE_ENV === 'production' ? 'Lax' : 'None', // Use 'None' for cross-site dev with HTTPS, 'Lax' otherwise
-            maxAge: 24 * 60 * 60 * 1000, // Cookie expires in 24 hours
-            path: '/' // Cookie accessible for all paths
+            httpOnly: true,
+            secure: isProd, // true only in production where HTTPS is expected
+            sameSite: 'Lax', // Lax is a good balance for dev and production
+            maxAge: 24 * 60 * 60 * 1000,
+            path: '/'
         };
-        // If SameSite=None, Secure must be true (usually enforced by browsers)
-        if (cookieOptions.sameSite === 'None' && !cookieOptions.secure) {
-             // For local HTTP development cross-site cookies might not work reliably.
-             // Consider Lax or running frontend/backend on same site locally.
-            console.warn("[WARN] SameSite=None sin Secure=true puede ser bloqueado por navegadores modernos.");
-             cookieOptions.secure = true; // Attempt to set secure anyway if using None
-        }
 
         res.cookie('ucn_session', sessionId, cookieOptions);
 
@@ -324,7 +378,8 @@ app.get('/malla/:mallaId', async (req, res) => {
     // Target URL for the external malla service
     const targetUrl = `https://losvilos.ucn.cl/hawaii/api/mallas?${mallaId}`;
     // Required authentication header for the target service
-    const hawaiiAuthToken = 'jf400fejof13f'; // Hardcoded token as per example
+    // Use environment variable HAWAII_AUTH in production; fallback to embedded dev token
+    const hawaiiAuthToken = process.env.HAWAII_AUTH || 'jf400fejof13f';
 
     console.log(`[MALLA] Requesting malla for ${mallaId} from ${targetUrl}`);
 
@@ -347,6 +402,36 @@ app.get('/malla/:mallaId', async (req, res) => {
                     errorDetail = errorBody.error || errorBody.message;
                 }
             } catch { /* Ignore parsing error */ }
+
+            // If the external service denies access (401/403) try to return a local fallback file
+            if (response.status === 401 || response.status === 403) {
+                try {
+                    const fallbackPath = path.join(__dirname, 'data', 'mallas', `${mallaId}.json`);
+                    if (fs.existsSync(fallbackPath)) {
+                        const raw = fs.readFileSync(fallbackPath, 'utf8');
+                        const fallbackData = JSON.parse(raw);
+                        console.log(`[MALLA FALLBACK] Returning local fallback for ${mallaId} from ${fallbackPath}`);
+                        return res.json({ malla: fallbackData, meta: { source: 'local-fallback', fetchedAt: new Date().toISOString() } });
+                    } else {
+                        console.warn(`[MALLA FALLBACK] No fallback file found at ${fallbackPath}`);
+                    }
+                    // If no specific fallback exists, try a generic frontend fallback if available
+                    try {
+                        const genericFallback = path.join(__dirname, '..', 'frontend', 'malla', 'malla-fallback.json');
+                        if (fs.existsSync(genericFallback)) {
+                            const raw2 = fs.readFileSync(genericFallback, 'utf8');
+                            const fallbackData2 = JSON.parse(raw2);
+                            console.log(`[MALLA FALLBACK] Returning generic frontend fallback for ${mallaId} from ${genericFallback}`);
+                            return res.json({ malla: fallbackData2, meta: { source: 'generic-frontend-fallback', fetchedAt: new Date().toISOString() } });
+                        }
+                    } catch (fb2Err) {
+                        console.warn('[MALLA FALLBACK] Error reading generic frontend fallback:', fb2Err.message);
+                    }
+                } catch (fbErr) {
+                    console.warn('[MALLA FALLBACK] Error reading fallback file:', fbErr.message);
+                }
+            }
+
             return res.status(response.status).json({ error: `Error al obtener datos de la malla (${response.status})`, detalle: errorDetail });
         }
 
@@ -532,14 +617,115 @@ app.get('/carreras-autenticado/:rut', async (req, res) => {
       res.status(501).json({ error: "Endpoint obsoleto y potencialmente inseguro. Usar GET /carreras/:rut con sesión." });
 });
 
+// ------------------------
+// Proyecciones endpoints
+// ------------------------
 
-// Start server
-const PORT = 3001;
-app.listen(PORT, () => console.log(`[INFO] Backend intermedio corriendo en http://localhost:${PORT}`));
+// Save a projection for the authenticated user
+app.post('/proyeccion', authenticateSession, (req, res) => {
+    const { codigoCarrera, name, projection } = req.body || {};
+    if (!projection || !codigoCarrera) {
+        return res.status(400).json({ error: 'Falta codigoCarrera o projection en el cuerpo' });
+    }
 
-// Helper function to normalize RUTs (remove dots and dashes)
-function normalizeRut(rut) {
-    return typeof rut === 'string' ? rut.replace(/[.-]/g, '') : '';
-}
+    try {
+        const id = crypto.randomBytes(8).toString('hex');
+        const now = Date.now();
+        const obj = {
+            id,
+            userId: req.session.userId,
+            codigoCarrera,
+            name: name || `proyeccion_${codigoCarrera}_${now}`,
+            projection,
+            createdAt: now,
+            updatedAt: now
+        };
+        proyecciones.push(obj);
+        saveProyeccionesToDisk();
+        res.json({ id, createdAt: new Date(now).toISOString() });
+    } catch (err) {
+        console.error('[PROYECCION SAVE ERROR]', err);
+        res.status(500).json({ error: 'Error interno guardando proyección' });
+    }
+});
+
+// List projections for the authenticated user (optional filter by codigo)
+app.get('/proyeccion', authenticateSession, (req, res) => {
+    const codigo = req.query.codigo;
+    try {
+        const list = proyecciones.filter(p => p.userId === req.session.userId && (!codigo || p.codigoCarrera === codigo));
+        res.json({ proyecciones: list, meta: { count: list.length } });
+    } catch (err) {
+        console.error('[PROYECCION LIST ERROR]', err);
+        res.status(500).json({ error: 'Error interno listando proyecciones' });
+    }
+});
+
+// Get a single projection by id (only owner can access)
+app.get('/malla/:mallaId', async (req, res) => {
+    const { mallaId } = req.params;
+    // Basic validation for the mallaId format
+    if (!mallaId || !/^\d+-\d+$/.test(mallaId)) {
+        return res.status(400).json({ error: 'Formato de ID de malla inválido. Use {codigo}-{catalogo}.' });
+    }
+
+    // If no HAWAII_AUTH is provided, prefer returning a local fallback immediately (dev-friendly)
+    const hawaiiAuthToken = process.env.HAWAII_AUTH;
+    const targetUrl = `https://losvilos.ucn.cl/hawaii/api/mallas?${mallaId}`;
+
+    console.log(`[MALLA] Requesting malla for ${mallaId} from ${targetUrl} (HAWAII_AUTH ${hawaiiAuthToken ? 'present' : 'missing'})`);
+
+    // If the token is missing, return a local fallback if available, otherwise a clear 503
+    if (!hawaiiAuthToken) {
+        const fb = getLocalMallaFallback(mallaId);
+        if (fb) {
+            console.log(`[MALLA FALLBACK] Returning local fallback for ${mallaId} from ${fb.path}`);
+            return res.json({ malla: fb.malla, meta: { source: fb.source, fetchedAt: new Date().toISOString() } });
+        }
+        return res.status(503).json({ error: 'Servicio externo deshabilitado (HAWAII_AUTH no definido) y no se encontró fallback local' });
+    }
+
+    try {
+        const response = await fetch(targetUrl, {
+            method: 'GET',
+            headers: {
+                'X-HAWAII-AUTH': hawaiiAuthToken
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`[MALLA ERROR HTTP] Failed for ${mallaId}. Status: ${response.status}`);
+            let errorDetail = `Status ${response.status}`;
+            try {
+                const errorBody = await response.json();
+                if (errorBody && (errorBody.error || errorBody.message)) errorDetail = errorBody.error || errorBody.message;
+            } catch (e) { /* ignore */ }
+
+            // On auth errors or other failures try local fallback
+            if (response.status === 401 || response.status === 403) {
+                const fb = getLocalMallaFallback(mallaId);
+                if (fb) {
+                    console.log(`[MALLA FALLBACK] Returning local fallback for ${mallaId} from ${fb.path}`);
+                    return res.json({ malla: fb.malla, meta: { source: fb.source, fetchedAt: new Date().toISOString() } });
+                }
+            }
+
+            return res.status(502).json({ error: 'Error al obtener malla desde servicio externo', detalle: errorDetail });
+        }
+
+        const body = await response.json();
+        const returned = body.malla || body;
+        return res.json({ malla: returned, meta: { source: 'external', fetchedAt: new Date().toISOString() } });
+
+    } catch (err) {
+        console.error(`[MALLA ERROR] Exception while fetching malla ${mallaId}:`, err.message);
+        const fb = getLocalMallaFallback(mallaId);
+        if (fb) {
+            console.log(`[MALLA FALLBACK] Returning local fallback for ${mallaId} from ${fb.path}`);
+            return res.json({ malla: fb.malla, meta: { source: fb.source, fetchedAt: new Date().toISOString() } });
+        }
+        return res.status(500).json({ error: 'Error interno al obtener malla', detalle: err.message });
+    }
+});
 
 

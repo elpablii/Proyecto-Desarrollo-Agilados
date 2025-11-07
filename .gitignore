@@ -1,3 +1,10 @@
 # Ignorar dependencias de Node.js
 node_modules/
+ 
+# Ignore backend persisted session and projections files (dev only)
+/backend/sessions.json
+/backend/proyecciones.json
+
+# Environment files
+.env
 

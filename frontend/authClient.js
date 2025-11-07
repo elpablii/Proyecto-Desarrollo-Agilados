@@ -120,8 +120,12 @@ class AuthClient {
             if (response.ok) {
                 const data = await response.json();
                 // Actualizar información de sesión
+                // Use userId returned by backend as authoritative source
+                if (data.userId) {
+                    sessionStorage.setItem('userRut', data.userId);
+                }
                 sessionStorage.setItem('sessionExpires', data.expiresAt);
-                console.log('Autenticación verificada en backend');
+                console.log('Autenticación verificada en backend (userId updated)');
                 return true;
             } else {
                 console.log('Backend no confirma autenticación:', response.status);
@@ -220,7 +224,7 @@ class AuthClient {
         }
         
         // *** CAMBIO: Usar ruta absoluta al login ***
-        window.location.href = '/frontend/login.html';
+        window.location.href = '/login.html';
     }
 
     /**
@@ -338,9 +342,9 @@ export async function initializeAuth() {
     if (!hasValidSession) {
         // Redirigir al login si no hay sesión válida
         // *** CAMBIO: Usar ruta absoluta al login ***
-        if (window.location.pathname !== '/frontend/login.html' && 
+        if (window.location.pathname !== '/login.html' && 
             !window.location.pathname.includes('login.html')) {
-            window.location.href = '/frontend/login.html';
+            window.location.href = '/login.html';
         }
     }
     return hasValidSession;

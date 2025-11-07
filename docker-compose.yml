@@ -1,0 +1,34 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: agilados-backend:latest
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      # Optionally provide an authentication token for the external mallas API
+      - HAWAII_AUTH=${HAWAII_AUTH}
+      - NODE_ENV=production
+    volumes:
+      # Persist session and proyecciones files on the host for development convenience
+      - ./backend/sessions.json:/app/sessions.json
+      - ./backend/proyecciones.json:/app/proyecciones.json
+    networks:
+      - agilados_net
+
+  frontend:
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    ports:
+      - "5500:80"
+    volumes:
+      # Serve the frontend static files from the host
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - agilados_net
+
+networks:
+  agilados_net:
+    driver: bridge

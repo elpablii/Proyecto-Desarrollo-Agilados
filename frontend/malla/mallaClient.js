@@ -22,7 +22,24 @@ export async function fetchMalla(mallaId) {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
-            throw new Error(`Error HTTP ${response.status}: ${errorData?.error || 'No se pudo obtener la malla'}`);
+            const status = response.status;
+            console.warn(`[mallaClient] Server returned ${status} when fetching malla:`, errorData);
+            // If 401 (unauthorized) or other server-side auth error, try a frontend-local fallback
+            if (status === 401 || status === 403) {
+                try {
+                    console.info('[mallaClient] Intentando cargar malla local de fallback');
+                    const fallbackResp = await fetch('malla/malla-fallback.json');
+                    if (fallbackResp.ok) {
+                        const fallbackData = await fallbackResp.json();
+                        console.info('[mallaClient] Malla fallback cargada con éxito');
+                        return fallbackData;
+                    }
+                    console.warn('[mallaClient] No se pudo cargar fallback local, status:', fallbackResp.status);
+                } catch (e) {
+                    console.warn('[mallaClient] Error cargando fallback local:', e);
+                }
+            }
+            throw new Error(`Error HTTP ${status}: ${errorData?.error || 'No se pudo obtener la malla'}`);
         }
 
         const data = await response.json();

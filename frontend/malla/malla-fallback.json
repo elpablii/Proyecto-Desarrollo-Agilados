@@ -1,0 +1,30 @@
+[
+  {
+    "codigo": "PROG100",
+    "asignatura": "Introducción a la Programación",
+    "creditos": 8,
+    "nivel": 1,
+    "prereq": ""
+  },
+  {
+    "codigo": "MAT101",
+    "asignatura": "Matemática Básica",
+    "creditos": 8,
+    "nivel": 1,
+    "prereq": ""
+  },
+  {
+    "codigo": "PROG200",
+    "asignatura": "Estructuras de Datos",
+    "creditos": 8,
+    "nivel": 2,
+    "prereq": "PROG100"
+  },
+  {
+    "codigo": "ALGOR",
+    "asignatura": "Algoritmos",
+    "creditos": 8,
+    "nivel": 2,
+    "prereq": "PROG100,MAT101"
+  }
+]

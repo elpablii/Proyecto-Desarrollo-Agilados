@@ -7,7 +7,7 @@ const logoutButton = document.getElementById('logout');
  * @param {string} redirectUrl - URL a la que redirigir después del logout
  */
 // Usar ruta absoluta a login para evitar 404 desde páginas anidadas
-export async function salirLogout(redirectUrl = "/frontend/login.html") {
+export async function salirLogout(redirectUrl = "/login.html") {
     try {
         // Mostrar indicador de carga
         if (logoutButton) {

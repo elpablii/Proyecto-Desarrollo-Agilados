@@ -4,10 +4,11 @@
  */
 
 import { authClient } from './authClient.js';
+import { API_BASE_URL } from './config.js';
 
 class CareerDetailsClient {
     constructor() {
-        this.baseUrl = 'http://localhost:3001';
+        this.baseUrl = API_BASE_URL;
         this.userId = null;
         this.careerData = null;
     }

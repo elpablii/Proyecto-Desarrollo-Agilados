@@ -2,6 +2,7 @@
 import { authClient } from '../authClient.js';
 // Importa las funciones para buscar datos de malla y avance
 import { fetchMalla, fetchAvance } from './mallaClient.js';
+import { computeProjection, renderProjection } from './proyeccion.js';
 
 // --- Elementos del DOM ---
 const loadingState = document.getElementById('loading-state');
@@ -20,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!isAuthenticated) {
         console.log('Usuario no autenticado, redirigiendo al login...');
          // *** CAMBIO: Usar ruta absoluta al login ***
-        window.location.href = '/frontend/login.html'; // Ajusta la ruta al login
+    window.location.href = '/login.html'; // Ajusta la ruta al login
         return;
     }
     
@@ -39,6 +40,63 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Validar parámetros
     if (!rut || !codigoCarrera || !catalogo) {
         mostrarError('Faltan parámetros (RUT, código o catálogo) en la URL.');
+        // Añadir botón de demo para cargar fallback localmente
+        const errorStateEl = document.getElementById('error-state');
+        if (errorStateEl) {
+            // Limpiar acciones previas
+            let actionBar = document.getElementById('error-actions');
+            if (actionBar) actionBar.remove();
+            actionBar = document.createElement('div');
+            actionBar.id = 'error-actions';
+            actionBar.style.marginTop = '8px';
+
+            const demoBtn = document.createElement('button');
+            demoBtn.className = 'bg-blue-500 text-white px-3 py-1 rounded';
+            demoBtn.textContent = 'Ver demo (malla fallback)';
+            demoBtn.addEventListener('click', async () => {
+                try {
+                    mostrarCarga(true);
+                    mostrarError(null);
+                    // Cargar malla fallback desde archivos locales
+                    const resp = await fetch('malla/malla-fallback.json');
+                    if (!resp.ok) throw new Error('No se pudo cargar fallback local');
+                    const mallaData = await resp.json();
+                    const avanceData = []; // demo sin avance
+                    mostrarCarga(false);
+                    renderMalla(mallaData, avanceData);
+                    // calcular y renderizar proyección
+                    try {
+                        const projection = computeProjection(mallaData, avanceData, { maxCreditsPerSemester: 30, includeInProgressAsCompleted: false });
+                        const projContainer = document.getElementById('proyeccion-container');
+                        if (projection && projection.semesters && projContainer) {
+                            projContainer.style.display = 'block';
+                            renderProjection(projContainer, projection, {
+                                maxCreditsPerSemester: 30,
+                                rut: 'demo',
+                                codigo: 'demo',
+                                onReset: () => computeProjection(mallaData, avanceData, { maxCreditsPerSemester: 30 })
+                            });
+                        }
+                    } catch (err) {
+                        console.warn('No se pudo calcular la proyección demo:', err);
+                    }
+                } catch (err) {
+                    console.error('Error cargando demo:', err);
+                    mostrarError('No se pudo cargar la malla de demo.');
+                    mostrarCarga(false);
+                }
+            });
+
+            const backLink = document.createElement('a');
+            backLink.href = '../carreras/carrerasUsuario.html';
+            backLink.className = 'ml-3 text-blue-600 hover:underline';
+            backLink.textContent = 'Volver a Mis Carreras';
+
+            actionBar.appendChild(demoBtn);
+            actionBar.appendChild(backLink);
+            errorStateEl.appendChild(actionBar);
+        }
+
         return;
     }
 
@@ -57,6 +115,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 4. Renderizar
         mostrarCarga(false);
         renderMalla(mallaData, avanceData);
+
+        // 5. Calcular y renderizar proyección por defecto
+        try {
+            const projection = computeProjection(mallaData, avanceData, { maxCreditsPerSemester: 30, includeInProgressAsCompleted: false });
+            const projContainer = document.getElementById('proyeccion-container');
+            if (projection && projection.semesters && projContainer) {
+                projContainer.style.display = 'block';
+                // pass list of aprobados so the projection module can validate prereqs on DnD
+                const aprobados = new Set(aprobadosFromAvance(avanceData));
+                renderProjection(projContainer, projection, {
+                    maxCreditsPerSemester: 30,
+                    rut,
+                    codigo: codigoCarrera,
+                    completed: Array.from(aprobados),
+                    onReset: () => computeProjection(mallaData, avanceData, { maxCreditsPerSemester: 30 })
+                });
+            }
+        } catch (err) {
+            console.warn('No se pudo calcular la proyección por defecto:', err);
+        }
 
     } catch (error) {
         // 5. Manejar errores
@@ -94,6 +172,11 @@ function renderMalla(malla, avance) {
             .filter(a => a.status === 'CURSANDO' || a.status === 'INSCRITO')
             .map(a => a.course)
     );
+
+    // Helper to extract aprobados array
+    window.aprobadosFromAvance = function(avanceArr) {
+        return (avanceArr || []).filter(a => a.status === 'APROBADO').map(a => a.course);
+    };
 
 
     // 2. Agrupar Malla por Nivel

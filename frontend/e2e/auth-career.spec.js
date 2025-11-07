@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 
 test('Login and view career details', async ({ page }) => {
   // 1. Ir a la página de login
-  await page.goto('/frontend/login.html'); // Asume baseURL está configurada
+  await page.goto('/login.html'); // Asume baseURL está configurada
 
   // 2. Rellenar credenciales (Usa variables de entorno o credenciales de test)
   await page.locator('#username').fill('usuario_prueba@example.com'); // Usa ID del input
