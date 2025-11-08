@@ -28,7 +28,8 @@ export async function fetchMalla(mallaId) {
             if (status === 401 || status === 403) {
                 try {
                     console.info('[mallaClient] Intentando cargar malla local de fallback');
-                    const fallbackResp = await fetch('malla/malla-fallback.json');
+                    // Use absolute path so this works regardless of current page location
+                    const fallbackResp = await fetch('/malla/malla-fallback.json');
                     if (fallbackResp.ok) {
                         const fallbackData = await fallbackResp.json();
                         console.info('[mallaClient] Malla fallback cargada con éxito');

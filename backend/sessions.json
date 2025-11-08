@@ -1,7 +1,7 @@
 [
   {
-    "id": "ed2a5249c059f7b3f08b7469cfc0e55911fb340bbccf3d60126d59fd8951f2e0",
-    "token": "cd229a48605852d0ea7daf7d757a59caaa9c08502b65306cc1dc53c0918aedc2",
+    "id": "0cf90d12b5529c0802d2b2b662243242afa4bd437699eadfd8d06487ea4d921d",
+    "token": "7d1d865ca85da30af3fbd3d27236a29c94efc5cbe88ded52ded876ae1d16ea6a",
     "userId": "333333333",
     "email": "ximena@example.com",
     "carreras": [
@@ -16,9 +16,9 @@
         "catalogo": "202310"
       }
     ],
-    "createdAt": 1762571239673,
-    "lastActivity": 1762571239673,
-    "expiresAt": 1762657639673,
+    "createdAt": 1762571695011,
+    "lastActivity": 1762571697337,
+    "expiresAt": 1762658095011,
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
   }
 ]

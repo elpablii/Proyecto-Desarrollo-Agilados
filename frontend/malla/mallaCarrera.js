@@ -58,7 +58,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     mostrarCarga(true);
                     mostrarError(null);
                     // Cargar malla fallback desde archivos locales
-                    const resp = await fetch('malla/malla-fallback.json');
+                    // Use absolute path so fallback loads even when this page is served from /malla/
+                    const resp = await fetch('/malla/malla-fallback.json');
                     if (!resp.ok) throw new Error('No se pudo cargar fallback local');
                     const mallaData = await resp.json();
                     const avanceData = []; // demo sin avance

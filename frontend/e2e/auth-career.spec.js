@@ -23,7 +23,7 @@ test('Login and view career details', async ({ page }) => {
   await expect(saludoLocator).toContainText('Bienvenido, 11.111.111-1!'); // Verifica el texto esperado
 
   // 8. Click en enlace a carreras
-  await page.locator('a[href="/frontend/carreras/carrerasUsuario.html"]').click(); // Selector del enlace
+  await page.locator('a[href="/carreras/carrerasUsuario.html"]').click(); // Selector del enlace
 
   // 9. Verificar URL de carreras
   await page.waitForURL('**/carrerasUsuario.html');

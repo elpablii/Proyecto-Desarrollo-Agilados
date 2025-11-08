@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error cargando dashboard:', err);
         container.innerHTML = `
             <div class="p-4 bg-red-100 border border-red-300 text-red-700 rounded">
-                No se pudo cargar la información del tablero. Puedes ir a <a href="/frontend/carreras/carrerasUsuario.html" class="text-blue-600 underline">Consultar Carreras</a> o usar la demo.
+                    No se pudo cargar la información del tablero. Puedes ir a <a href="/carreras/carrerasUsuario.html" class="text-blue-600 underline">Consultar Carreras</a> o usar la demo.
             </div>
         `;
     }
@@ -50,9 +50,9 @@ function renderDashboard(container, data) {
                     <h2 class="text-2xl font-semibold mb-2">Bienvenido</h2>
                     <p class="text-gray-600 mb-4">Aquí tienes un resumen rápido de tus carreras y atajos.</p>
                     <div class="flex gap-3">
-                        <a href="/frontend/carreras/carrerasUsuario.html" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Consultar Carreras</a>
-                        <a href="/frontend/auth-status.html" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">Estado de autenticación</a>
-                        <a href="/frontend/malla/mallaCarrera.html" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Abrir Malla (manual)</a>
+                        <a href="/carreras/carrerasUsuario.html" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Consultar Carreras</a>
+                        <a href="/auth-status.html" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">Estado de autenticación</a>
+                        <a href="/malla/mallaCarrera.html" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Abrir Malla (manual)</a>
                     </div>
                 </div>
             </div>
@@ -90,11 +90,11 @@ function renderDashboard(container, data) {
                     <div class="text-sm text-gray-500">Código: ${c.codigo} · Catálogo: ${c.catalogo || 'N/A'}</div>
                 </div>
                 <div class="text-right">
-                    <a href="/frontend/malla/mallaCarrera.html?rut=${encodeURIComponent((data.rut)||'')}&codigo=${encodeURIComponent(c.codigo)}&catalogo=${encodeURIComponent(c.catalogo||'')}&nombre=${encodeURIComponent(c.nombre||'')}" class="text-blue-600 hover:underline">Ver malla</a>
+                    <a href="/malla/mallaCarrera.html?rut=${encodeURIComponent((data.rut)||'')}&codigo=${encodeURIComponent(c.codigo)}&catalogo=${encodeURIComponent(c.catalogo||'')}&nombre=${encodeURIComponent(c.nombre||'')}" class="text-blue-600 hover:underline">Ver malla</a>
                 </div>
             </div>
             <div class="mt-3">
-                <a href="/frontend/carreras/carrerasUsuario.html" class="text-sm text-gray-600 hover:underline">Ver detalles</a>
+                <a href="/carreras/carrerasUsuario.html" class="text-sm text-gray-600 hover:underline">Ver detalles</a>
             </div>
         `;
         list.appendChild(card);
