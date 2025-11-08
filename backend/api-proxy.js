@@ -113,6 +113,9 @@ const getLocalMallaFallback = (mallaId) => {
     return null;
 };
 
+// Helper: Normalize RUT by removing dots and dashes (used across multiple routes)
+const normalizeRut = (r) => r ? r.replace(/[.\-]/g, '') : '';
+
 // Initial load of sessions
 loadSessionsFromDisk();
 // Initial load of projections
@@ -467,7 +470,6 @@ app.get('/avance/:rut/:codigoCarrera', authenticateSession, async (req, res) => 
 
     // Security check: Ensure the requested RUT matches the session's user ID
     // Remove dots and dashes for comparison if RUT formats might differ
-    const normalizeRut = (r) => r ? r.replace(/[.-]/g, '') : '';
     if (normalizeRut(rut) !== normalizeRut(sessionUserId)) {
          console.warn(`[AVANCE FORBIDDEN] Session user ${sessionUserId} attempted to access avance for ${rut}`);
          return res.status(403).json({ error: 'No autorizado para acceder a este avance curricular.' });
