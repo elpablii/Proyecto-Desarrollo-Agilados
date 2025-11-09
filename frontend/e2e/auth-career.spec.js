@@ -1,38 +1,63 @@
-// e2e/auth-career.spec.js
 import { test, expect } from '@playwright/test';
 
-test('Login and view career details', async ({ page }) => {
-  // 1. Ir a la página de login
-  await page.goto('/login.html'); // Asume baseURL está configurada
+// URL base de la aplicación (la que sirve Nginx)
+const BASE_URL = 'http://localhost:5500';
 
-  // 2. Rellenar credenciales (Usa variables de entorno o credenciales de test)
-  await page.locator('#username').fill('usuario_prueba@example.com'); // Usa ID del input
-  await page.locator('#password').fill('contraseña_prueba'); // Usa ID del input
+test.describe('Flujo completo de Login y Malla', () => {
 
-  // 4. Click en login
-  await page.locator('button[type="submit"]').click(); // Selector del botón
+  test('debería loguearse, navegar a la malla y ver asignaturas marcadas', async ({ page }) => {
+    
+    page.on('dialog', dialog => dialog.accept());
 
-  // 5. Esperar redirección y verificar URL
-  await page.waitForURL('**/dePrueba.html'); // Espera a que la URL contenga dePrueba.html
-  await expect(page).toHaveURL(/.*dePrueba\.html/);
+    // 1. Ir a la página de Login
+    await page.goto(`${BASE_URL}/login.html`);
 
-  // 7. Verificar mensaje de bienvenida
-  // Asumiendo que el RUT de prueba es '11.111.111-1'
-  const saludoLocator = page.locator('#saludo-usuario h1'); // Selector del h1 dentro del div
-  await expect(saludoLocator).toBeVisible();
-  await expect(saludoLocator).toContainText('Bienvenido, 11.111.111-1!'); // Verifica el texto esperado
+    // Usamos las credenciales de 'maria' del sessions.json
+    await page.fill('#username', 'maria@example.com');
+    await page.fill('#password', 'pass_maria');
+    await page.click('button[type="submit"]');
 
-  // 8. Click en enlace a carreras
-  await page.locator('a[href="/carreras/carrerasUsuario.html"]').click(); // Selector del enlace
+    // 2. Esperar a ser redirigido al dashboard (dePrueba.html)
+    // y verificar el saludo (basado en el RUT de maria)
+    await page.waitForURL('**/dePrueba.html');
+    await expect(page.locator('#saludo-usuario')).toHaveText('Bienvenido, 22.222.222-2!');
 
-  // 9. Verificar URL de carreras
-  await page.waitForURL('**/carrerasUsuario.html');
-  await expect(page).toHaveURL(/.*carrerasUsuario\.html/);
+    // 3. Ir a la lista de carreras
+    await page.click('a[href="carreras/carrerasUsuario.html"]');
 
-  // 10. Verificar que se muestran datos o el indicador de carga
-  const datosCarreraLocator = page.locator('#datos-carrera'); // ID del contenedor
-  // Espera a que el contenedor tenga algún contenido (spinner o datos)
-  await expect(datosCarreraLocator).not.toBeEmpty();
-  // Podrías verificar específicamente el spinner o un dato esperado si sabes cuál es
-  // await expect(page.locator('#datos-carrera .animate-spin')).toBeVisible(); // Verifica el spinner
+    // 4. Esperar a la página de carreras y hacer clic en la carrera
+    await page.waitForURL('**/carreras/carrerasUsuario.html');
+    
+    // Hacemos clic en el enlace de la carrera específica (basado en sessions.json)
+    const carreraLink = page.locator('a:has-text("Ingeniería Civil Industrial (Coquimbo)")');
+    await carreraLink.click();
+
+    // 5. Esperar a navegar a la página de la malla
+    // Verificamos que la URL contiene los parámetros correctos
+    await page.waitForURL('**/malla/mallaCarrera.html?rut=22.222.222-2&codigo=8266&catalogo=202410**');
+    
+    // 6. Verificar que la malla se renderiza
+    // Esperamos que el estado de carga desaparezca
+    await expect(page.locator('#loading-state')).toBeHidden({ timeout: 10000 });
+    // Verificamos que el contenedor de la malla esté visible
+    await expect(page.locator('#malla-grid-container')).toBeVisible();
+
+    // 7. Verificar estados de asignaturas (basado en el avance de 'maria' en sessions.json)
+
+    // CÁLCULO I (MCN-101) debe estar APROBADA
+    const calculo1 = page.locator('.asignatura-card:has-text("CÁLCULO I")');
+    await expect(calculo1).toHaveClass(/asignatura-aprobada/);
+    
+    // CÁLCULO II (MCN-103) debe estar REPROBADA
+    const calculo2 = page.locator('.asignatura-card:has-text("CÁLCULO II")');
+    await expect(calculo2).toHaveClass(/asignatura-reprobada/);
+
+    // PROGRAMACIÓN (ICC-101) debe estar CURSANDO
+    const programacion = page.locator('.asignatura-card:has-text("PROGRAMACIÓN")');
+    await expect(programacion).toHaveClass(/asignatura-cursando/);
+
+    // QUÍMICA GENERAL (CST-101) debe estar PENDIENTE (no está en el avance)
+    const quimica = page.locator('.asignatura-card:has-text("QUÍMICA GENERAL")');
+    await expect(quimica).toHaveClass(/asignatura-pendiente/);
+  });
 });

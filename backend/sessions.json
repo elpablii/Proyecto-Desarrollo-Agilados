@@ -1,24 +1,38 @@
 [
   {
-    "id": "0cf90d12b5529c0802d2b2b662243242afa4bd437699eadfd8d06487ea4d921d",
-    "token": "7d1d865ca85da30af3fbd3d27236a29c94efc5cbe88ded52ded876ae1d16ea6a",
-    "userId": "333333333",
-    "email": "ximena@example.com",
+    "email": "maria@example.com",
+    "password": "pass_maria",
+    "rut": "22.222.222-2",
     "carreras": [
       {
         "codigo": "8266",
-        "nombre": "ITI",
+        "nombre": "Ingeniería Civil Industrial (Coquimbo)",
         "catalogo": "202410"
-      },
+      }
+    ],
+    "avance": {
+      "8266": [
+        {"course": "MCN-101", "status": "APROBADO"},
+        {"course": "ICC-101", "status": "CURSANDO"},
+        {"course": "MCN-103", "status": "REPROBADO"}
+      ]
+    }
+  },
+  {
+    "email": "ximena@example.com",
+    "password": "pass_ximena",
+    "rut": "33.333.333-3",
+    "carreras": [
       {
         "codigo": "8616",
-        "nombre": "ICI",
+        "nombre": "Ingeniería Civil de Minas (Coquimbo)",
         "catalogo": "202310"
       }
     ],
-    "createdAt": 1762571695011,
-    "lastActivity": 1762571697337,
-    "expiresAt": 1762658095011,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+    "avance": {
+      "8616": [
+         {"course": "CST-100", "status": "APROBADO"}
+      ]
+    }
   }
 ]
