@@ -2,13 +2,11 @@ const authService = require('../services/sessionService');
 
 // Maneja el inicio de sesión
 const handleLogin = async (req, res) => {
+    // La validación de existencia (if !email) se elimina
+    // Los datos ya fueron validados y sanitizados por 'loginRules'
     const { email, password } = req.body;
     const userAgent = req.get('User-Agent');
     const clientIP = req.ip || req.connection.remoteAddress;
-
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Email y contraseña son requeridos' });
-    }
 
     console.log(`[LOGIN ATTEMPT] Email: ${email}, IP: ${clientIP}`);
 

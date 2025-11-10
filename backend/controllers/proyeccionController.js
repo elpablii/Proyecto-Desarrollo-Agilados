@@ -1,10 +1,8 @@
 const proyeccionService = require('../services/proyeccionService');
 
 const saveProyeccion = (req, res) => {
+    // La validación de existencia se elimina
     const { codigoCarrera, name, projection } = req.body || {};
-    if (!projection || !codigoCarrera) {
-        return res.status(400).json({ error: 'Falta codigoCarrera o projection en el cuerpo' });
-    }
 
     try {
         const userId = req.session.userId; // De authMiddleware

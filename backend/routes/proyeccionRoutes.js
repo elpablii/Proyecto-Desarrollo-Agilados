@@ -3,12 +3,15 @@ const router = express.Router();
 const { saveProyeccion, listProyecciones, getProyeccion } = require('../controllers/proyeccionController');
 const { authenticateSession } = require('../middleware/authMiddleware');
 
-// --- Rutas de Proyecciones (Todas protegidas) ---
-router.use(authenticateSession); // Aplica autenticación a todas las rutas de este archivo
+// --- Importar validación ---
+const { saveProyeccionRules, getProyeccionRules } = require('../utils/validators');
+const { handleValidationErrors } = require('../middleware/validationMiddleware');
 
-router.post('/', saveProyeccion);
-router.get('/', listProyecciones);
-router.get('/:id', getProyeccion);
-// Nota: Faltarían PUT (actualizar) y DELETE si se quisiera completar el CRUD
+// --- Rutas de Proyecciones (Todas protegidas) ---
+router.use(authenticateSession); // Aplica autenticación a todas
+
+router.post('/', saveProyeccionRules(), handleValidationErrors, saveProyeccion);
+router.get('/', listProyecciones); // GET (Listar) no necesita validación estricta de query params
+router.get('/:id', getProyeccionRules(), handleValidationErrors, getProyeccion);
 
 module.exports = router;

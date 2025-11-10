@@ -29,11 +29,8 @@ const getCarreras = async (req, res) => {
 
 // Obtiene la malla (proxy)
 const getMalla = async (req, res) => {
+    // La validación de formato (regex) se elimina
     const { mallaId } = req.params;
-
-    if (!mallaId || !/^\d+-\d+$/.test(mallaId)) {
-        return res.status(400).json({ error: 'Formato de ID de malla inválido. Use {codigo}-{catalogo}.' });
-    }
 
     try {
         const { data, meta } = await proxyService.fetchMalla(mallaId);
