@@ -4,6 +4,11 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 
+// [NUEVO] Cargar variables de entorno desde .env (para desarrollo local)
+// Docker-compose lo hace automáticamente, pero esto es para 'npm start'
+// Apuntamos al .env en la raíz del proyecto (un nivel arriba de /backend)
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
 // Importar REPOSITORIOS (para carga inicial)
 const { loadSessionsFromDisk } = require('./repositories/sessionRepository');
 const { loadProyeccionesFromDisk } = require('./repositories/proyeccionRepository');

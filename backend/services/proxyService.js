@@ -4,18 +4,17 @@ const { getLocalMallaFallback } = require('../utils/helpers');
 
 // Obtiene la malla desde el servicio externo o fallback
 const fetchMalla = async (mallaId) => {
+    // [CORRECCIÓN] Se elimina el token hardcodeado
     const hawaiiAuthToken = process.env.HAWAII_AUTH;
     const targetUrl = `https://losvilos.ucn.cl/hawaii/api/mallas?${mallaId}`;
 
     console.log(`[MALLA] Requesting malla for ${mallaId} (HAWAII_AUTH ${hawaiiAuthToken ? 'present' : 'missing'})`);
 
+    // [MODIFICADO] Si el token no está en las variables de entorno, falla.
+    // Ya no usamos el fallback local si la variable falta.
     if (!hawaiiAuthToken) {
-        const fb = getLocalMallaFallback(mallaId);
-        if (fb) {
-            console.log(`[MALLA FALLBACK] Returning local fallback from ${fb.path}`);
-            return { data: fb.malla, meta: { source: fb.source, fetchedAt: new Date().toISOString() } };
-        }
-        throw Object.assign(new Error('Servicio externo deshabilitado (HAWAII_AUTH no definido) y no se encontró fallback local'), { status: 503 });
+        console.error("[MALLA ERROR] HAWAII_AUTH no está definido en las variables de entorno.");
+        throw Object.assign(new Error('Servicio externo deshabilitado (HAWAII_AUTH no definido).'), { status: 503 });
     }
 
     try {
@@ -31,6 +30,8 @@ const fetchMalla = async (mallaId) => {
                 if (errorBody && (errorBody.error || errorBody.message)) errorDetail = errorBody.error || errorBody.message;
             } catch (e) { /* ign */ }
 
+            // [MODIFICADO] Solo usamos el fallback si la API falla (ej. 401),
+            // pero NO si la variable de entorno faltaba.
             if (response.status === 401 || response.status === 403) {
                 const fb = getLocalMallaFallback(mallaId);
                 if (fb) {
