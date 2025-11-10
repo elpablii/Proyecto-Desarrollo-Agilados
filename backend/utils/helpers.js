@@ -1,0 +1,35 @@
+const fs = require('fs');
+const path = require('path');
+
+// Normaliza un RUT
+const normalizeRut = (r) => r ? r.replace(/[.\-]/g, '') : '';
+
+// Obtiene un fallback de malla
+const getLocalMallaFallback = (mallaId) => {
+    try {
+        // Fallback específico
+        const fallbackPath = path.join(__dirname, '..', 'data', 'mallas', `${mallaId}.json`);
+        if (fs.existsSync(fallbackPath)) {
+            const raw = fs.readFileSync(fallbackPath, 'utf8');
+            return { malla: JSON.parse(raw), source: 'local-fallback', path: fallbackPath };
+        }
+    } catch (e) {
+        console.warn('[MALLA FALLBACK] Error leyendo fallback específico:', e.message);
+    }
+    try {
+        // Fallback genérico
+        const genericFallback = path.join(__dirname, '..', '..', 'frontend', 'malla', 'malla-fallback.json');
+        if (fs.existsSync(genericFallback)) {
+            const raw2 = fs.readFileSync(genericFallback, 'utf8');
+            return { malla: JSON.parse(raw2), source: 'frontend-generic-fallback', path: genericFallback };
+        }
+    } catch (e) {
+        console.warn('[MALLA FALLBACK] Error leyendo fallback genérico:', e.message);
+    }
+    return null;
+};
+
+module.exports = {
+    normalizeRut,
+    getLocalMallaFallback
+};
