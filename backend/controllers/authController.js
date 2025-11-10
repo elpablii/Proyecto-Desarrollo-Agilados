@@ -1,9 +1,8 @@
 const authService = require('../services/sessionService');
 
-// Maneja el inicio de sesión
+// (handleLogin ya era async, no necesita cambios)
+// ... (handleLogin) ...
 const handleLogin = async (req, res) => {
-    // La validación de existencia (if !email) se elimina
-    // Los datos ya fueron validados y sanitizados por 'loginRules'
     const { email, password } = req.body;
     const userAgent = req.get('User-Agent');
     const clientIP = req.ip || req.connection.remoteAddress;
@@ -12,8 +11,7 @@ const handleLogin = async (req, res) => {
 
     try {
         const { sessionId, sessionData, loginData } = await authService.loginUser(email, password, userAgent);
-
-        // Configuración de la cookie
+        // ... (config de cookie y respuesta) ...
         const isProd = process.env.NODE_ENV === 'production';
         const cookieOptions = {
             httpOnly: true,
@@ -22,12 +20,8 @@ const handleLogin = async (req, res) => {
             maxAge: 24 * 60 * 60 * 1000,
             path: '/'
         };
-
         res.cookie('ucn_session', sessionId, cookieOptions);
-
         console.log(`[LOGIN SUCCESS] Email: ${email}, RUT: ${loginData.rut}, IP: ${clientIP}, Session: ${sessionId}`);
-
-        // Respuesta al cliente
         res.json({
             rut: loginData.rut,
             token: sessionData.token, // Token de fallback
@@ -37,8 +31,8 @@ const handleLogin = async (req, res) => {
                 sessionExpires: new Date(sessionData.expiresAt).toISOString()
             }
         });
-
     } catch (error) {
+        // ... (manejo de error) ...
         console.error(`[LOGIN ERROR] Email: ${email}, IP: ${clientIP}, Error:`, error);
         if (error.message.includes('Credenciales')) {
             return res.status(401).json({ error: error.message, detalle: error.detalle });
@@ -50,12 +44,12 @@ const handleLogin = async (req, res) => {
     }
 };
 
-// Maneja el cierre de sesión
-const handleLogout = (req, res) => {
+// [MODIFICADO] handleLogout ahora es asíncrono
+const handleLogout = async (req, res) => {
     const sessionId = req.cookies.ucn_session;
 
     if (sessionId) {
-        authService.logoutUser(sessionId);
+        await authService.logoutUser(sessionId); // [MODIFICADO] await
         console.log(`[LOGOUT] Session: ${sessionId} eliminada`);
     }
 
@@ -63,7 +57,8 @@ const handleLogout = (req, res) => {
     res.json({ message: 'Sesión cerrada exitosamente' });
 };
 
-// Devuelve el estado de la sesión actual
+// (getAuthStatus no llama a servicios async, no necesita cambios)
+// ... (getAuthStatus) ...
 const getAuthStatus = (req, res) => {
     // req.session es adjuntado por el middleware authenticateSession
     res.json({

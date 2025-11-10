@@ -1,11 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
+// [NUEVO] Importar promesas de fs
+const fsPromises = require('fs').promises;
+
 // Normaliza un RUT
 const normalizeRut = (r) => r ? r.replace(/[.\-]/g, '') : '';
 
 // Obtiene un fallback de malla
 const getLocalMallaFallback = (mallaId) => {
+    // ... (código existente sin cambios)
     try {
         // Fallback específico
         const fallbackPath = path.join(__dirname, '..', 'data', 'mallas', `${mallaId}.json`);
@@ -29,7 +33,33 @@ const getLocalMallaFallback = (mallaId) => {
     return null;
 };
 
+/**
+ * [NUEVO] Escribe datos en un archivo de forma atómica.
+ * Escribe en un archivo .tmp y luego lo renombra.
+ * @param {string} filePath - Ruta al archivo final.
+ * @param {string} data - Datos a escribir (string).
+ */
+const atomicWriteFile = async (filePath, data) => {
+    const tempPath = filePath + '.tmp';
+    try {
+        await fsPromises.writeFile(tempPath, data, 'utf8');
+        await fsPromises.rename(tempPath, filePath);
+    } catch (err) {
+        console.error(`[ATOMIC WRITE ERROR] Falló al escribir en ${filePath}:`, err);
+        // Si falló, intentar limpiar el archivo temporal
+        try {
+            if (fs.existsSync(tempPath)) {
+                await fsPromises.unlink(tempPath);
+            }
+        } catch (cleanupErr) {
+            console.error(`[ATOMIC WRITE ERROR] Falló al limpiar ${tempPath}:`, cleanupErr);
+        }
+        throw err; // Re-lanzar el error original
+    }
+};
+
 module.exports = {
     normalizeRut,
-    getLocalMallaFallback
+    getLocalMallaFallback,
+    atomicWriteFile // Exportar la nueva utilidad
 };

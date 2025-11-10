@@ -1,12 +1,13 @@
 const proyeccionService = require('../services/proyeccionService');
 
-const saveProyeccion = (req, res) => {
-    // La validación de existencia se elimina
+// [MODIFICADO] saveProyeccion ahora es asíncrono
+const saveProyeccion = async (req, res) => {
     const { codigoCarrera, name, projection } = req.body || {};
 
     try {
         const userId = req.session.userId; // De authMiddleware
-        const newProyeccion = proyeccionService.saveProjection({
+        // [MODIFICADO] await
+        const newProyeccion = await proyeccionService.saveProjection({
             userId,
             codigoCarrera,
             name,
@@ -19,6 +20,8 @@ const saveProyeccion = (req, res) => {
     }
 };
 
+// (listProyecciones y getProyeccion no llaman servicios async, no necesitan cambios)
+// ... (listProyecciones, getProyeccion) ...
 const listProyecciones = (req, res) => {
     const codigo = req.query.codigo;
     const userId = req.session.userId;
@@ -49,6 +52,7 @@ const getProyeccion = (req, res) => {
         res.status(500).json({ error: 'Error interno obteniendo proyección' });
     }
 };
+
 
 module.exports = {
     saveProyeccion,

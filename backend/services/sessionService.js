@@ -1,18 +1,13 @@
-// Servicio para manejar la lógica de sesiones (ahora usa el repositorio)
 const crypto = require('crypto');
 const sessionRepository = require('../repositories/sessionRepository');
-
-// Use dynamic import for node-fetch
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-// (loadSessionsFromDisk se llama ahora desde index.js)
-
 /**
- * Crea el objeto de sesión (Lógica de negocio).
+ * [MODIFICADO] Ahora es asíncrono.
  * @param {object} userData 
  * @returns {object} El objeto de sesión creado.
  */
-const createSecureSession = (userData) => {
+const createSecureSession = async (userData) => {
     const sessionId = crypto.randomBytes(32).toString('hex');
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 horas
@@ -29,19 +24,19 @@ const createSecureSession = (userData) => {
         userAgent: userData.userAgent || 'unknown'
     };
 
-    // Pide al repositorio que guarde la sesión
-    sessionRepository.save(session);
+    // [MODIFICADO] Await al guardar en el repositorio
+    await sessionRepository.save(session);
     return session;
 };
 
 // Lógica de login
 const loginUser = async (email, password, userAgent) => {
-    // (La lógica de fetch y validación sigue siendo lógica de servicio)
+    // ... (lógica de fetch sin cambios) ...
     const loginUrl = `https://puclaro.ucn.cl/eross/avance/login.php?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
 
     try {
         const response = await fetch(loginUrl, { method: 'GET' });
-
+        // ... (validaciones de response sin cambios) ...
         if (!response.ok) {
             let errorDetail = `Status ${response.status}`;
             try {
@@ -50,26 +45,24 @@ const loginUser = async (email, password, userAgent) => {
             } catch { /* ign */ }
             throw new Error('Credenciales inválidas', { cause: { detalle: errorDetail, status: 401 } });
         }
-
+        // ... (validaciones de contentType y data sin cambios) ...
         const contentType = response.headers.get('content-type') || '';
         if (!contentType.includes('application/json')) {
             throw new Error('Respuesta inesperada del servicio de autenticación (no JSON)', { cause: { status: 502 } });
         }
-
         let data;
         try {
             data = await response.json();
         } catch (parseErr) {
             throw new Error('Respuesta no válida del servicio de autenticación (error parse)', { cause: { status: 502 } });
         }
-
         if (!data || data.error || !data.rut || !data.carreras) {
             const reason = data && data.error ? data.error : 'Respuesta inválida o falta RUT/carreras';
             throw new Error('Credenciales inválidas', { cause: { detalle: reason, status: 401 } });
         }
 
-        // Éxito, crear sesión (lógica de negocio + persistencia vía repo)
-        const sessionData = createSecureSession({
+        // [MODIFICADO] Await a la creación de sesión
+        const sessionData = await createSecureSession({
             rut: data.rut,
             email: email,
             carreras: data.carreras,
@@ -87,69 +80,67 @@ const loginUser = async (email, password, userAgent) => {
     }
 };
 
-// Cierra sesión
-const logoutUser = (sessionId) => {
+// [MODIFICADO] Cierra sesión ahora es asíncrono
+const logoutUser = async (sessionId) => {
     if (sessionId) {
-        sessionRepository.deleteById(sessionId);
+        await sessionRepository.deleteById(sessionId);
     }
 };
 
 /**
- * Obtiene y valida una sesión desde el repositorio.
+ * [MODIFICADO] Ahora es asíncrono.
  * @param {string} sessionId 
  * @returns {object | null}
  */
-const getSession = (sessionId) => {
+const getSession = async (sessionId) => {
     if (!sessionId) return null;
     
-    // Pide la sesión al repositorio
     const session = sessionRepository.findById(sessionId);
     if (!session) return null;
 
-    // Verificar expiración (lógica de negocio)
     if (Date.now() > session.expiresAt) {
-        sessionRepository.deleteById(sessionId);
+        await sessionRepository.deleteById(sessionId);
         return null;
     }
     
-    // Actualizar actividad y guardar (lógica de negocio)
     session.lastActivity = Date.now();
-    sessionRepository.save(session); // Actualiza la sesión en el repo
+    await sessionRepository.save(session); // Actualiza la sesión (asíncrono)
     return session;
 };
 
 /**
- * Busca una sesión por token (para el middleware de autenticación).
+ * [MODIFICADO] Ahora es asíncrono.
  * @param {string} token 
  * @returns {object | null}
  */
-const findSessionByToken = (token) => {
+const findSessionByToken = async (token) => {
     const session = sessionRepository.findByToken(token);
     if (!session) return null;
 
-    // Re-validar la sesión encontrada (expiración, etc.)
-    return getSession(session.id);
+    // Re-validar la sesión encontrada (ahora es async)
+    return await getSession(session.id);
 };
 
 // Limpieza de sesiones
-const cleanupExpiredSessions = () => {
+const cleanupExpiredSessions = async () => {
     const now = Date.now();
     let deletedCount = 0;
     
-    // Pide todos los datos al repositorio
     const allSessions = sessionRepository.findAll();
 
-    // Aplica lógica de negocio (cuál expira)
+    // Usar Promise.all para eliminar en paralelo (más eficiente)
+    const deletionPromises = [];
     for (const session of allSessions) {
         if (now > session.expiresAt) {
-            sessionRepository.deleteById(session.id); // Pide al repositorio que elimine
+            deletionPromises.push(sessionRepository.deleteById(session.id));
             deletedCount++;
         }
     }
     
+    await Promise.all(deletionPromises);
+    
     if (deletedCount > 0) {
         console.log(`[INFO] Servicio: Se eliminaron ${deletedCount} sesiones expiradas.`);
-        // saveSessionsToDisk() es llamado por deleteById
     }
 };
 
@@ -157,7 +148,6 @@ const cleanupExpiredSessions = () => {
 setInterval(cleanupExpiredSessions, 60 * 60 * 1000);
 
 module.exports = {
-    // loadSessionsFromDisk, // Ya no lo exporta el servicio
     loginUser,
     logoutUser,
     getSession,
