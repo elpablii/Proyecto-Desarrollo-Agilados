@@ -5,8 +5,10 @@ WORKDIR /app
 
 # Install app dependencies
 COPY package*.json ./
-RUN npm ci --only=production ||
-npm install --production
+
+# [CORREGIDO] Se agrega '\' al final de la línea para unirla con la siguiente
+RUN npm ci --only=production || \
+    npm install --production
 
 # Bundle app source
 # Copiamos la nueva estructura de carpetas
