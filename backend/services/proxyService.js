@@ -23,6 +23,7 @@ const fetchMalla = async (codigo, catalogo) => {
             method: 'GET',
             headers: { 'X-HAWAII-AUTH': hawaiiAuthToken }
         });
+        console.log("respuesta recibida del servicio externo");
 
         if (!response.ok) {
             let errorDetail = `Status ${response.status}`;
