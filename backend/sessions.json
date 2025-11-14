@@ -1,38 +1,46 @@
 [
   {
-    "email": "maria@example.com",
-    "password": "pass_maria",
-    "rut": "22.222.222-2",
+    "id": "d39c031d5a58c168c96ccc9a207c247d40ee298e760a276eabab83fa04920909",
+    "token": "4206a6d80cfc338d8655f9583448abbaaf73c0dc83eea4b8604290d2994993dc",
+    "userId": "333333333",
+    "email": "ximena@example.com",
     "carreras": [
       {
         "codigo": "8266",
-        "nombre": "Ingeniería Civil Industrial (Coquimbo)",
+        "nombre": "ITI",
         "catalogo": "202410"
-      }
-    ],
-    "avance": {
-      "8266": [
-        {"course": "MCN-101", "status": "APROBADO"},
-        {"course": "ICC-101", "status": "CURSANDO"},
-        {"course": "MCN-103", "status": "REPROBADO"}
-      ]
-    }
-  },
-  {
-    "email": "ximena@example.com",
-    "password": "pass_ximena",
-    "rut": "33.333.333-3",
-    "carreras": [
+      },
       {
         "codigo": "8616",
-        "nombre": "Ingeniería Civil de Minas (Coquimbo)",
+        "nombre": "ICI",
         "catalogo": "202310"
       }
     ],
-    "avance": {
-      "8616": [
-         {"course": "CST-100", "status": "APROBADO"}
-      ]
-    }
+    "createdAt": 1763143882737,
+    "lastActivity": 1763143907463,
+    "expiresAt": 1763230282737,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "17ae4d339e72312eebfd7164ed2583edc7f3faf5cca2faa449aed1318a92d4dd",
+    "token": "8545cbff329cb5921f08f5cf81cfb623c40fedab424393d5354adc307da6bde9",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "ITI",
+        "catalogo": "202410"
+      },
+      {
+        "codigo": "8616",
+        "nombre": "ICI",
+        "catalogo": "202310"
+      }
+    ],
+    "createdAt": 1763145109012,
+    "lastActivity": 1763145119844,
+    "expiresAt": 1763231509012,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
   }
 ]

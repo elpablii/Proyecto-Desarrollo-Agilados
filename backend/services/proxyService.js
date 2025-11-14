@@ -3,10 +3,11 @@ const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fet
 const { getLocalMallaFallback } = require('../utils/helpers');
 
 // Obtiene la malla desde el servicio externo o fallback
-const fetchMalla = async (mallaId) => {
+const fetchMalla = async (codigo, catalogo) => {
     // [CORRECCIÓN] Se elimina el token hardcodeado
     const hawaiiAuthToken = process.env.HAWAII_AUTH;
-    const targetUrl = `https://losvilos.ucn.cl/hawaii/api/mallas?${mallaId}`;
+    const mallaId = `${codigo}-${catalogo}`;
+    const targetUrl = `https://losvilos.ucn.cl/hawaii/api/mallas/${codigo}/${catalogo}`;
 
     console.log(`[MALLA] Requesting malla for ${mallaId} (HAWAII_AUTH ${hawaiiAuthToken ? 'present' : 'missing'})`);
 
@@ -30,14 +31,11 @@ const fetchMalla = async (mallaId) => {
                 if (errorBody && (errorBody.error || errorBody.message)) errorDetail = errorBody.error || errorBody.message;
             } catch (e) { /* ign */ }
 
-            // [MODIFICADO] Solo usamos el fallback si la API falla (ej. 401),
-            // pero NO si la variable de entorno faltaba.
-            if (response.status === 401 || response.status === 403) {
-                const fb = getLocalMallaFallback(mallaId);
-                if (fb) {
-                    console.log(`[MALLA FALLBACK] Returning local fallback due to auth error: ${fb.path}`);
-                    return { data: fb.malla, meta: { source: fb.source, fetchedAt: new Date().toISOString() } };
-                }
+            // Try fallback for any error status (401, 403, 502, etc.)
+            const fb = getLocalMallaFallback(mallaId);
+            if (fb) {
+                console.log(`[MALLA FALLBACK] Returning local fallback due to error ${response.status}: ${fb.path}`);
+                return { data: fb.malla, meta: { source: fb.source, fetchedAt: new Date().toISOString() } };
             }
             throw Object.assign(new Error('Error al obtener malla desde servicio externo'), { status: 502, detalle: errorDetail });
         }

@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Pedir datos de malla y avance en paralelo
         const [mallaData, avanceData] = await Promise.all([
-            fetchMalla(`${codigoCarrera}-${catalogo}`),
+            fetchMalla(codigoCarrera, catalogo),
             fetchAvance(rut, codigoCarrera)
         ]);
         

@@ -9,11 +9,11 @@ const { handleValidationErrors } = require('../middleware/validationMiddleware')
 
 // --- Rutas de Datos Académicos ---
 
-// Endpoint de Malla (Público) con validación
-router.get('/malla/:mallaId', mallaRules(), handleValidationErrors, getMalla);
+// Endpoint de Malla (Público) con validación - separated codigo and catalogo parameters
+router.get('/data/malla/:codigo/:catalogo', mallaRules(), handleValidationErrors, getMalla);
 
 // Endpoints Protegidos con validación
-router.get('/carreras/:rut', authenticateSession, carrerasRules(), handleValidationErrors, getCarreras);
-router.get('/avance/:rut/:codigoCarrera', authenticateSession, avanceRules(), handleValidationErrors, getAvance);
+router.get('/data/carreras/:rut', authenticateSession, carrerasRules(), handleValidationErrors, getCarreras);
+router.get('/data/avance/:rut/:codigoCarrera', authenticateSession, avanceRules(), handleValidationErrors, getAvance);
 
 module.exports = router;

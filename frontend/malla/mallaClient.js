@@ -6,15 +6,16 @@ import { API_BASE_URL } from '../config.js';
 /**
  * Busca los datos de la malla curricular desde el backend proxy.
  * No requiere autenticación de usuario.
- * @param {string} mallaId - El ID de la malla (ej. "8606-201610")
+ * @param {string} codigo - El código de la carrera (ej. "8266")
+ * @param {string} catalogo - El catálogo de la malla (ej. "202410")
  * @returns {Promise<Array>} - La lista de asignaturas de la malla.
  */
-export async function fetchMalla(mallaId) {
-    if (!mallaId) {
-        throw new Error('Se requiere un ID de malla (codigo-catalogo).');
+export async function fetchMalla(codigo, catalogo) {
+    if (!codigo || !catalogo) {
+        throw new Error('Se requieren código y catálogo de la malla.');
     }
     
-    const url = `${API_BASE_URL}/malla/${mallaId}`;
+    const url = `${API_BASE_URL}/data/malla/${codigo}/${catalogo}`;
     console.log(`[mallaClient] Fetching Malla from: ${url}`);
 
     try {
@@ -70,7 +71,7 @@ export async function fetchAvance(rut, codigoCarrera) {
     }
 
     // Usa el authenticatedFetch del authClient para incluir la cookie/token de sesión
-    const url = `${API_BASE_URL}/avance/${rut}/${codigoCarrera}`;
+    const url = `${API_BASE_URL}/data/avance/${rut}/${codigoCarrera}`;
     console.log(`[mallaClient] Fetching Avance from: ${url}`);
     
     try {

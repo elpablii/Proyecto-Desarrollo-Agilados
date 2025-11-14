@@ -1,0 +1,58 @@
+[
+  {
+    "codigo": "PROG100",
+    "asignatura": "Programación I",
+    "creditos": 8,
+    "nivel": 1,
+    "prereq": ""
+  },
+  {
+    "codigo": "MAT101",
+    "asignatura": "Cálculo Diferencial",
+    "creditos": 8,
+    "nivel": 1,
+    "prereq": ""
+  },
+  {
+    "codigo": "FIS101",
+    "asignatura": "Física General I",
+    "creditos": 8,
+    "nivel": 1,
+    "prereq": ""
+  },
+  {
+    "codigo": "PROG200",
+    "asignatura": "Programación II",
+    "creditos": 8,
+    "nivel": 2,
+    "prereq": "PROG100"
+  },
+  {
+    "codigo": "MAT201",
+    "asignatura": "Cálculo Integral",
+    "creditos": 8,
+    "nivel": 2,
+    "prereq": "MAT101"
+  },
+  {
+    "codigo": "FIS201",
+    "asignatura": "Física General II",
+    "creditos": 8,
+    "nivel": 2,
+    "prereq": "FIS101,MAT101"
+  },
+  {
+    "codigo": "SOFT300",
+    "asignatura": "Ingeniería de Software",
+    "creditos": 8,
+    "nivel": 3,
+    "prereq": "PROG200"
+  },
+  {
+    "codigo": "BD300",
+    "asignatura": "Bases de Datos",
+    "creditos": 8,
+    "nivel": 3,
+    "prereq": "PROG200"
+  }
+]

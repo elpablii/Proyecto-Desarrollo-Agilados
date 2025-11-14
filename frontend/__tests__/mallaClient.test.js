@@ -48,11 +48,12 @@ describe('mallaClient', () => {
         json: async () => mockMallaResponse, // Devuelve el objeto completo
       });
 
-      const mallaId = '8266-202410';
-      const data = await fetchMalla(mallaId);
+      const codigo = '8266';
+      const catalogo = '202410';
+      const data = await fetchMalla(codigo, catalogo);
 
       // Verificamos que fetch fue llamado con la URL correcta
-      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/malla/${mallaId}`, { method: 'GET' });
+      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/data/malla/${codigo}/${catalogo}`, { method: 'GET' });
       // Verificamos que los datos retornados son la propiedad .malla
       expect(data).toEqual(mockMallaResponse.malla);
     });
@@ -65,10 +66,11 @@ describe('mallaClient', () => {
         json: async () => ({ error: 'No Encontrado' }),
       });
 
-      const mallaId = 'ID_INCORRECTO';
+      const codigo = 'CODIGO_INCORRECTO';
+      const catalogo = 'CATALOGO_INCORRECTO';
       
       // Verificamos que la promesa sea rechazada con el error correcto
-      await expect(fetchMalla(mallaId)).rejects.toThrow('Error HTTP 404: No Encontrado');
+      await expect(fetchMalla(codigo, catalogo)).rejects.toThrow('Error HTTP 404: No Encontrado');
     });
   });
 

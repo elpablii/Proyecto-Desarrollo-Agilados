@@ -29,11 +29,12 @@ const getCarreras = async (req, res) => {
 
 // Obtiene la malla (proxy)
 const getMalla = async (req, res) => {
-    // La validación de formato (regex) se elimina
-    const { mallaId } = req.params;
+    // Accept separated codigo and catalogo parameters
+    const { codigo, catalogo } = req.params;
+    const mallaId = `${codigo}-${catalogo}`;
 
     try {
-        const { data, meta } = await proxyService.fetchMalla(mallaId);
+        const { data, meta } = await proxyService.fetchMalla(codigo, catalogo);
         res.json({ malla: data, meta });
     } catch (error) {
         console.error(`[MALLA ERROR] Controller failed for ${mallaId}:`, error.message);

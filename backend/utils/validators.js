@@ -14,11 +14,15 @@ const loginRules = () => [
 ];
 
 /**
- * Reglas para GET /malla/:mallaId
+ * Reglas para GET /data/malla/:codigo/:catalogo
  */
 const mallaRules = () => [
-    param('mallaId', 'Formato de ID de malla inválido. Use {codigo}-{catalogo}')
-        .matches(/^\d+-\d+$/)
+    param('codigo', 'Código de carrera inválido - debe ser numérico')
+        .isNumeric()
+        .trim()
+        .escape(),
+    param('catalogo', 'Catálogo inválido - debe ser numérico')
+        .isNumeric()
         .trim()
         .escape()
 ];

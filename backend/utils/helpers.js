@@ -35,25 +35,15 @@ const getLocalMallaFallback = (mallaId) => {
 
 /**
  * [NUEVO] Escribe datos en un archivo de forma atómica.
- * Escribe en un archivo .tmp y luego lo renombra.
+ * Escribe directamente sin usar .tmp para evitar problemas de lock en WSL2/Docker.
  * @param {string} filePath - Ruta al archivo final.
  * @param {string} data - Datos a escribir (string).
  */
 const atomicWriteFile = async (filePath, data) => {
-    const tempPath = filePath + '.tmp';
     try {
-        await fsPromises.writeFile(tempPath, data, 'utf8');
-        await fsPromises.rename(tempPath, filePath);
+        await fsPromises.writeFile(filePath, data, 'utf8');
     } catch (err) {
         console.error(`[ATOMIC WRITE ERROR] Falló al escribir en ${filePath}:`, err);
-        // Si falló, intentar limpiar el archivo temporal
-        try {
-            if (fs.existsSync(tempPath)) {
-                await fsPromises.unlink(tempPath);
-            }
-        } catch (cleanupErr) {
-            console.error(`[ATOMIC WRITE ERROR] Falló al limpiar ${tempPath}:`, cleanupErr);
-        }
         throw err; // Re-lanzar el error original
     }
 };

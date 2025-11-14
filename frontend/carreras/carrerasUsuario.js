@@ -48,7 +48,7 @@ async function cargarDatosCarrera(rut) {
         console.log(`Cargando datos de carrera para RUT: ${rut}`);
         // Usar authenticatedFetch para asegurar que la sesión es válida
         // *** CAMBIO: Usar constante API_BASE_URL ***
-        const response = await authClient.authenticatedFetch(`${API_BASE_URL}/carreras/${rut}`, {
+        const response = await authClient.authenticatedFetch(`${API_BASE_URL}/data/carreras/${rut}`, {
             method: 'GET'
         });
         

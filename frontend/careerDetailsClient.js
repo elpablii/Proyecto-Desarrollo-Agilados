@@ -54,7 +54,7 @@ class CareerDetailsClient {
             console.log(`Obteniendo datos de carrera para RUT: ${this.userId}`);
             
             // Usar el cliente de autenticación para hacer peticiones autenticadas
-            const response = await authClient.authenticatedFetch(`${this.baseUrl}/carreras/${this.userId}`, {
+            const response = await authClient.authenticatedFetch(`${this.baseUrl}/data/carreras/${this.userId}`, {
                 method: 'GET'
             });
             

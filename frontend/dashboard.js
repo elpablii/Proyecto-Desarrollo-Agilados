@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const rut = authClient.getCurrentUser();
 
         // fetch carreras
-        const resp = await authClient.authenticatedFetch(`${API_BASE_URL}/carreras/${rut}`, { method: 'GET' });
+        const resp = await authClient.authenticatedFetch(`${API_BASE_URL}/data/carreras/${rut}`, { method: 'GET' });
         if (!resp.ok) {
             throw new Error('No se pudieron obtener las carreras');
         }
