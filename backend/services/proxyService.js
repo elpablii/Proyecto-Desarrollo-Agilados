@@ -1,5 +1,6 @@
 // Servicio para manejar la lógica de proxy a APIs externas
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const axios = require('axios');
 const { getLocalMallaFallback } = require('../utils/helpers');
 
 // Obtiene la malla desde el servicio externo o fallback
@@ -7,7 +8,8 @@ const fetchMalla = async (codigo, catalogo) => {
     // [CORRECCIÓN] Se elimina el token hardcodeado
     const hawaiiAuthToken = process.env.HAWAII_AUTH;
     const mallaId = `${codigo}-${catalogo}`;
-    const targetUrl = `https://losvilos.ucn.cl/hawaii/api/mallas/${codigo}/${catalogo}`;
+    // [CORRECCIÓN] La API espera query parameter
+    const targetUrl = `https://losvilos.ucn.cl/hawaii/api/mallas/?${mallaId}`;
 
     console.log(`[MALLA] Requesting malla for ${mallaId} (HAWAII_AUTH ${hawaiiAuthToken ? 'present' : 'missing'})`);
 
@@ -19,35 +21,40 @@ const fetchMalla = async (codigo, catalogo) => {
     }
 
     try {
-        const response = await fetch(targetUrl, {
-            method: 'GET',
-            headers: { 'X-HAWAII-AUTH': hawaiiAuthToken }
-        });
-        console.log("respuesta recibida del servicio externo");
-
-        if (!response.ok) {
-            let errorDetail = `Status ${response.status}`;
-            try {
-                const errorBody = await response.json();
-                if (errorBody && (errorBody.error || errorBody.message)) errorDetail = errorBody.error || errorBody.message;
-            } catch (e) { /* ign */ }
-
-            // Try fallback for any error status (401, 403, 502, etc.)
-            const fb = getLocalMallaFallback(mallaId);
-            if (fb) {
-                console.log(`[MALLA FALLBACK] Returning local fallback due to error ${response.status}: ${fb.path}`);
-                return { data: fb.malla, meta: { source: fb.source, fetchedAt: new Date().toISOString() } };
+        console.log(`[MALLA DEBUG] URL: ${targetUrl}`);
+        console.log(`[MALLA DEBUG] Token: ${hawaiiAuthToken}`);
+        
+        // Usar axios que maneja mejor los headers custom
+        const response = await axios.get(targetUrl, {
+            headers: {
+                'X-HAWAII-AUTH': hawaiiAuthToken
             }
-            throw Object.assign(new Error('Error al obtener malla desde servicio externo'), { status: 502, detalle: errorDetail });
-        }
-
-        const body = await response.json();
-        const returned = body.malla || body;
+        });
+        console.log(`[MALLA] Respuesta recibida del servicio externo - Status: ${response.status}`);
+        
+        // Con axios, response.data ya contiene el JSON parseado
+        const body = response.data;
+        const returned = Array.isArray(body) ? body : (body.malla || body);
         return { data: returned, meta: { source: 'external', fetchedAt: new Date().toISOString() } };
 
     } catch (err) {
-        if (err.status) throw err; // Re-lanzar errores HTTP personalizados
-
+        // Axios lanza error para códigos de estado no exitosos
+        if (err.response) {
+            const status = err.response.status;
+            const errorData = err.response.data;
+            console.log(`[MALLA ERROR] Status ${status}:`, errorData);
+            
+            // Try fallback for any error status (401, 403, 502, etc.)
+            const fb = getLocalMallaFallback(mallaId);
+            if (fb) {
+                console.log(`[MALLA FALLBACK] Returning local fallback due to error ${status}: ${fb.path}`);
+                return { data: fb.malla, meta: { source: fb.source, fetchedAt: new Date().toISOString() } };
+            }
+            
+            const errorDetail = errorData?.error || errorData?.message || `Status ${status}`;
+            throw Object.assign(new Error('Error al obtener malla desde servicio externo'), { status: 502, detalle: errorDetail });
+        }
+        
         console.error(`[MALLA ERROR] Exception fetching ${mallaId}:`, err.message);
         const fb = getLocalMallaFallback(mallaId);
         if (fb) {

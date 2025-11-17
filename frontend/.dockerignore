@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+*.md
+package.json
+package-lock.json
+playwright.config.js
+playwright-report
+test-results
+__tests__
+e2e

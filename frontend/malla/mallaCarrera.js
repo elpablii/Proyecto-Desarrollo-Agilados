@@ -59,7 +59,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     mostrarError(null);
                     // Cargar malla fallback desde archivos locales
                     // Use absolute path so fallback loads even when this page is served from /malla/
-                    const resp = await fetch('http://localhost:3001/data/avance/333333333/8266');
+                    const API_BASE_URL = window.ENV_API_URL || 'http://localhost:3001';
+                    const resp = await fetch(`${API_BASE_URL}/data/avance/333333333/8266`);
                     if (!resp.ok) throw new Error('No se pudo cargar fallback local');
                     const mallaData = await resp.json();
                     const avanceData = []; // demo sin avance
@@ -117,10 +118,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         mostrarCarga(false);
         renderMalla(mallaData, avanceData);
 
-        // 5. Calcular y renderizar proyección por defecto
+        // 5. Intentar cargar proyección guardada desde el backend, si no existe, calcular una nueva
         try {
-            const projection = computeProjection(mallaData, avanceData, { maxCreditsPerSemester: 30, includeInProgressAsCompleted: false });
+            let projection = null;
             const projContainer = document.getElementById('proyeccion-container');
+            
+            // Primero intentar cargar proyección guardada
+            try {
+                const API_BASE_URL = window.ENV_API_URL || 'http://localhost:3001';
+                const resp = await fetch(`${API_BASE_URL}/proyeccion?codigo=${encodeURIComponent(codigoCarrera)}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && Array.isArray(data.proyecciones) && data.proyecciones.length > 0) {
+                        // Ordenar por fecha de actualización y tomar la más reciente
+                        data.proyecciones.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                        const latest = data.proyecciones[0];
+                        if (latest && latest.projection && Array.isArray(latest.projection.semesters)) {
+                            projection = latest.projection;
+                            console.log('[mallaCarrera] Proyección cargada desde el backend');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('[mallaCarrera] No se pudo cargar proyección guardada, generando nueva:', err);
+            }
+            
+            // Si no hay proyección guardada, calcular una nueva
+            if (!projection) {
+                projection = computeProjection(mallaData, avanceData, { maxCreditsPerSemester: 30, includeInProgressAsCompleted: false });
+                console.log('[mallaCarrera] Proyección generada por defecto');
+            }
+            
+            // Renderizar la proyección
             if (projection && projection.semesters && projContainer) {
                 projContainer.style.display = 'block';
                 // pass list of aprobados so the projection module can validate prereqs on DnD
@@ -134,7 +167,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
         } catch (err) {
-            console.warn('No se pudo calcular la proyección por defecto:', err);
+            console.warn('No se pudo cargar/calcular la proyección:', err);
         }
 
     } catch (error) {

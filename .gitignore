@@ -1,10 +1,47 @@
-# Ignorar dependencias de Node.js
-node_modules/
- 
-# Ignore backend persisted session and projections files (dev only)
+# Node.js dependencies (raíz - ya no se usan)
+/node_modules/
+/package-lock.json
+npm-debug.log*
+
+# Archivos de datos persistentes (dev only)
 /backend/sessions.json
 /backend/proyecciones.json
 
 # Environment files
 .env
+.env.local
+.env.*.local
+
+# Docker
+docker-compose.override.yml
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Archivos temporales y de desarrollo (ya no necesarios)
+dev-static-server.js
+tailwind.config.js
+
+# Assets de ejemplo/meme (opcional - comentar si quieres mantenerlos)
+# *.jpg
+# *.png
+# *.gif
+
+# OS
+Thumbs.db
+.DS_Store
 

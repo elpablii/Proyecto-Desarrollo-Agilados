@@ -89,7 +89,8 @@
         document.getElementById('test-backend').addEventListener('click', async () => {
             log('Probando conexión al backend...');
             try {
-                const response = await fetch('http://localhost:3001/auth/status', {
+                const API_BASE_URL = window.ENV_API_URL || 'http://localhost:3001';
+                const response = await fetch(`${API_BASE_URL}/auth/status`, {
                     method: 'GET',
                     credentials: 'include'
                 });

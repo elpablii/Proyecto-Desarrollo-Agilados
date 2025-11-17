@@ -4,28 +4,39 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     image: agilados-backend:latest
+    container_name: agilados-backend
     restart: unless-stopped
     ports:
       - "3001:3001"
     environment:
-      # Optionally provide an authentication token for the external mallas API
-      - HAWAII_AUTH=${HAWAII_AUTH}
+      - HAWAII_AUTH=${HAWAII_AUTH:-}
       - NODE_ENV=production
+      - PORT=3001
     volumes:
       # Persist session and proyecciones files on the host for development convenience
       - ./backend/sessions.json:/app/sessions.json
       - ./backend/proyecciones.json:/app/proyecciones.json
     networks:
       - agilados_net
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/auth/status', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   frontend:
-    image: nginx:stable-alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: agilados-frontend:latest
+    container_name: agilados-frontend
     restart: unless-stopped
     ports:
       - "5500:80"
-    volumes:
-      # Serve the frontend static files from the host
-      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      backend:
+        condition: service_healthy
     networks:
       - agilados_net
 
