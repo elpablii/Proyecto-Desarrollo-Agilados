@@ -66,5 +66,71 @@
     "lastActivity": 1763412369125,
     "expiresAt": 1763498766422,
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/123.0.0.0"
+  },
+  {
+    "id": "1afe40782a82eff479a8992eac9ad2a5e6f7ea1fbc5d7886c278a47eadfbc238",
+    "token": "f0102eba3b0190c39b5e4d6f2f2a8eff9836d7be99196a44e09a3cae51fb0520",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "ITI",
+        "catalogo": "202410"
+      },
+      {
+        "codigo": "8616",
+        "nombre": "ICI",
+        "catalogo": "202310"
+      }
+    ],
+    "createdAt": 1763414179231,
+    "lastActivity": 1763414190651,
+    "expiresAt": 1763500579231,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/123.0.0.0"
+  },
+  {
+    "id": "9674eae9a4bc2396a392f75865889352259c7f558c0b615197fb0c7bc404caeb",
+    "token": "dc3e8c0940900362644ece1d066b9116d46b9552ed1ce905ceb807c381c8b316",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "ITI",
+        "catalogo": "202410"
+      },
+      {
+        "codigo": "8616",
+        "nombre": "ICI",
+        "catalogo": "202310"
+      }
+    ],
+    "createdAt": 1763414180240,
+    "lastActivity": 1763414207758,
+    "expiresAt": 1763500580240,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/123.0.0.0"
+  },
+  {
+    "id": "23d83b2a709519ceca96f11269baedb570c6ae4f1a5afa9509451ecb33e888ab",
+    "token": "663e95c9d91ae5d021f109eca2b37a61c80c0820f463123d55b1e56f99794909",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "ITI",
+        "catalogo": "202410"
+      },
+      {
+        "codigo": "8616",
+        "nombre": "ICI",
+        "catalogo": "202310"
+      }
+    ],
+    "createdAt": 1763414267923,
+    "lastActivity": 1763414362307,
+    "expiresAt": 1763500667923,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/123.0.0.0"
   }
 ]
