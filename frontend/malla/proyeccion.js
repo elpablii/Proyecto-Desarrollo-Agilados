@@ -1,108 +1,182 @@
 /**
- * Módulo de proyección de malla curricular (MVP)
- * Exports:
- *  - computeProjection(mallaArray, avanceArray, options)
- *  - renderProjection(containerElement, projection, options)
+ * Módulo de proyección de malla curricular Inteligente (Sprint Fusionado)
+ * Incluye:
+ * 1. Detección de Alerta Académica.
+ * 2. Algoritmo de priorización por puntaje.
+ * 3. Renderizado de UI avanzada (Panel de estado, Drag & Drop validado, Menú).
  */
 
 import { API_BASE_URL } from '../config.js';
 
+/* ==========================================
+   SECCIÓN 1: LÓGICA Y ALGORITMOS (MODELO)
+   ========================================== */
+
 /**
- * Compute a semester-by-semester projection given malla and avance
- * options: { maxCreditsPerSemester: number, includeInProgressAsCompleted: bool }
+ * Detecta si el estudiante está en Alerta Académica según el historial.
+ * Reglas:
+ * 1. Reprobar 2 asignaturas en 2da oportunidad en el mismo semestre.
+ * 2. Reprobar 1 asignatura en 3ra oportunidad.
+ * @param {Array} avance - Historial académico completo
+ * @returns {boolean} - True si está en alerta, False si no.
+ */
+export function detectarAlertaAcademica(avance) {
+    if (!avance || avance.length === 0) return false;
+
+    const intentosPorCurso = {}; // Map<codigo, int>
+    const reprobacionesPorSemestre = {}; // Map<periodo, Array<{codigo, intento}>>
+
+    // Ordenar cronológicamente
+    const historialOrdenado = [...avance].sort((a, b) => (a.period || '').localeCompare(b.period || ''));
+
+    for (const registro of historialOrdenado) {
+        const codigo = registro.course;
+        const periodo = registro.period;
+        const estado = registro.status;
+
+        if (!intentosPorCurso[codigo]) intentosPorCurso[codigo] = 0;
+        
+        // Solo contamos intentos si el ramo fue inscrito (asumimos que aparece en el historial)
+        intentosPorCurso[codigo]++;
+        const numeroIntento = intentosPorCurso[codigo];
+
+        if (estado === 'REPROBADO') {
+            // Regla 2: Reprobar en 3ra oportunidad
+            if (numeroIntento >= 3) return true;
+
+            if (!reprobacionesPorSemestre[periodo]) reprobacionesPorSemestre[periodo] = [];
+            reprobacionesPorSemestre[periodo].push({ codigo, intento: numeroIntento });
+        }
+    }
+
+    // Regla 1: Reprobar 2 asignaturas en 2da oportunidad en el mismo semestre
+    for (const [periodo, reprobados] of Object.entries(reprobacionesPorSemestre)) {
+        const segundasOportunidades = reprobados.filter(r => r.intento === 2);
+        if (segundasOportunidades.length >= 2) return true;
+    }
+
+    return false;
+}
+
+/**
+ * Calcula un "Puntaje de Prioridad" para una asignatura.
+ */
+function calcularPrioridad(asignatura, grafoDependencias) {
+    let puntaje = 0;
+    // Prioridad 1: Nivel bajo (urgente). Invertimos nivel: 1->200 pts, 10->110 pts
+    puntaje += (20 - (asignatura.nivel || 10)) * 10; 
+    // Prioridad 2: Desbloqueo (cuántos ramos dependen de este)
+    const desbloquea = grafoDependencias.get(asignatura.codigo) || new Set();
+    puntaje += desbloquea.size * 5;
+    // Prioridad 3: Créditos (para llenar huecos pequeños)
+    puntaje += (asignatura.creditos || 0);
+    return puntaje;
+}
+
+/**
+ * Calcula fecha estimada de egreso.
+ */
+function calcularFechaEgreso(semestresRestantes) {
+    const today = new Date();
+    let year = today.getFullYear();
+    let month = today.getMonth() + 1; 
+    let currentSem = month <= 6 ? 1 : 2; // Semestre actual aproximado
+    
+    for(let i=0; i < semestresRestantes; i++) {
+        if(currentSem === 1) {
+            currentSem = 2;
+        } else {
+            currentSem = 1;
+            year++;
+        }
+    }
+    return `${year}-${currentSem}0`; 
+}
+
+/**
+ * Genera la proyección semestre a semestre (Greedy Algorithm).
  */
 export function computeProjection(malla, avance, options = {}) {
-    const maxCredits = options.maxCreditsPerSemester || 30;
+    let maxCredits = options.maxCreditsPerSemester || 30;
     const includeInProgress = !!options.includeInProgressAsCompleted;
 
     if (!Array.isArray(malla)) return { semesters: [], warnings: ['Malla inválida o vacía'] };
 
-    // Build maps
-    const mallaByCode = new Map();
-    for (const a of malla) {
-        mallaByCode.set(a.codigo, { ...a, prereqList: (a.prereq || '').split(',').map(s => s.trim()).filter(Boolean) });
+    // 1. Detección de Alerta
+    const enAlerta = detectarAlertaAcademica(avance);
+    const warnings = [];
+    
+    if (enAlerta) {
+        maxCredits = 15; // Regla de negocio
+        warnings.push('ALERTA ACADÉMICA DETECTADA: Carga máxima reducida a 15 créditos.');
     }
 
-    // Completed set from avance
+    // 2. Construcción de Grafos
+    const mallaByCode = new Map();
+    const dependenciasInversas = new Map(); 
+
+    for (const a of malla) {
+        mallaByCode.set(a.codigo, { 
+            ...a, 
+            prereqList: (a.prereq || '').split(',').map(s => s.trim()).filter(Boolean) 
+        });
+        if(!dependenciasInversas.has(a.codigo)) dependenciasInversas.set(a.codigo, new Set());
+    }
+
+    for (const [codigo, curso] of mallaByCode.entries()) {
+        for (const pre of curso.prereqList) {
+            if (dependenciasInversas.has(pre)) dependenciasInversas.get(pre).add(codigo);
+        }
+    }
+
+    // 3. Estado actual
     const completed = new Set(
-        (avance || [])
-            .filter(r => r.status === 'APROBADO')
-            .map(r => r.course)
+        (avance || []).filter(r => r.status === 'APROBADO').map(r => r.course)
     );
     if (includeInProgress) {
-        (avance || []).filter(r => r.status === 'CURSANDO' || r.status === 'INSCRITO').forEach(r => completed.add(r.course));
+        (avance || []).filter(r => r.status === 'CURSANDO' || r.status === 'INSCRITO')
+            .forEach(r => completed.add(r.course));
     }
 
-    // Remaining courses = those in malla not completed
     const remaining = new Set([...mallaByCode.keys()].filter(code => !completed.has(code)));
-
-    // Build indegree graph for topological detection (prereq -> course)
-    const indegree = new Map();
-    const adj = new Map();
-    for (const code of mallaByCode.keys()) {
-        indegree.set(code, 0);
-        adj.set(code, new Set());
-    }
-    for (const [code, course] of mallaByCode.entries()) {
-        for (const pre of course.prereqList) {
-            if (!mallaByCode.has(pre)) continue; // external prereq, ignore for indegree
-            adj.get(pre).add(code);
-            indegree.set(code, (indegree.get(code) || 0) + 1);
-        }
-    }
-
-    // Detect cycles with Kahn's algorithm (only considering nodes in malla)
-    const q = [];
-    for (const [c, d] of indegree.entries()) if (d === 0) q.push(c);
-    const topo = [];
-    while (q.length) {
-        const n = q.shift();
-        topo.push(n);
-        for (const nb of adj.get(n) || []) {
-            indegree.set(nb, indegree.get(nb) - 1);
-            if (indegree.get(nb) === 0) q.push(nb);
-        }
-    }
-    if (topo.length !== mallaByCode.size) {
-        return { semesters: [], warnings: ['Ciclo detectado en prerrequisitos o datos incompletos'], error: true };
-    }
-
-    // Now greedy assign by semesters
     const semesters = [];
     const scheduled = new Set();
-    const warnings = [];
 
-    // Helper to check if prereqs satisfied (either completed or scheduled earlier)
     function prereqsSatisfied(code) {
         const pList = mallaByCode.get(code).prereqList || [];
         for (const p of pList) {
             if (completed.has(p)) continue;
-            if (!scheduled.has(p)) return false;
+            if (scheduled.has(p)) continue;
+            return false;
         }
         return true;
     }
 
-    // We'll iterate until remaining empty
+    // 4. Loop de Programación
     while (remaining.size > 0) {
-        // Find eligible courses: in remaining and prereqs satisfied
-        const eligible = [];
+        let eligible = [];
         for (const code of remaining) {
-            if (prereqsSatisfied(code)) eligible.push(mallaByCode.get(code));
+            if (prereqsSatisfied(code)) {
+                const asignatura = mallaByCode.get(code);
+                const score = calcularPrioridad(asignatura, dependenciasInversas);
+                eligible.push({ ...asignatura, score });
+            }
         }
 
         if (eligible.length === 0) {
-            warnings.push('No hay cursos elegibles para programar — faltan prerrequisitos o datos incompletos');
+            warnings.push('No se puede completar la proyección (posible ciclo o datos faltantes).');
             break;
         }
 
-        // Sort eligible: nivel asc, creditos desc, then codigo
-        eligible.sort((a, b) => (a.nivel || 0) - (b.nivel || 0) || (b.creditos || 0) - (a.creditos || 0) || (a.codigo || '').localeCompare(b.codigo || ''));
+        // Ordenar por prioridad
+        eligible.sort((a, b) => b.score - a.score);
 
-        // Fill semester
         const semester = { courses: [], credits: 0 };
+        
         for (const course of eligible) {
-            if (!remaining.has(course.codigo)) continue; // may have been scheduled
+            if (!remaining.has(course.codigo)) continue;
             const c = course.creditos || 0;
+            
             if (semester.credits + c <= maxCredits) {
                 semester.courses.push({ ...course, prereqSatisfied: true });
                 semester.credits += c;
@@ -110,440 +184,286 @@ export function computeProjection(malla, avance, options = {}) {
             }
         }
 
-        // Edge case: nothing fit because first eligible has > maxCredits
-        if (semester.courses.length === 0) {
-            // pick the smallest eligible (or the first) and place alone
-            const first = eligible[0];
-            semester.courses.push({ ...first, prereqSatisfied: true });
-            semester.credits = first.creditos || 0;
-            scheduled.add(first.codigo);
-            warnings.push(`Asignatura ${first.codigo} con ${first.creditos} créditos excede el máximo por semestre (${maxCredits}), asignada sola`);
+        // Forzar al menos un curso si ninguno cabe (para no loop infinito)
+        if (semester.courses.length === 0 && eligible.length > 0) {
+            const forced = eligible[0];
+            semester.courses.push({ ...forced, prereqSatisfied: true });
+            semester.credits = forced.creditos;
+            scheduled.add(forced.codigo);
+            warnings.push(`Asignatura ${forced.codigo} excede límite, forzada.`);
         }
 
-        // Remove scheduled from remaining
         for (const c of semester.courses) remaining.delete(c.codigo);
-
         semesters.push(semester);
     }
 
-    return { semesters, warnings, totalSemesters: semesters.length };
+    return { 
+        semesters, 
+        warnings, 
+        totalSemesters: semesters.length,
+        studentStatus: enAlerta ? 'ALERTA' : 'REGULAR',
+        maxCreditsAllowed: maxCredits,
+        estimatedGraduation: calcularFechaEgreso(semesters.length)
+    };
 }
 
-/**
- * Render projection into a container. Adds simple drag & drop and save/restore to localStorage.
- */
+/* ==========================================
+   SECCIÓN 2: INTERFAZ DE USUARIO (RENDER)
+   ========================================== */
+
 export function renderProjection(container, projection, options = {}) {
     if (!container) return;
     container.innerHTML = '';
 
-    const maxCredits = options.maxCreditsPerSemester || 30;
+    const maxCredits = projection.maxCreditsAllowed || options.maxCreditsPerSemester || 30;
     const rut = options.rut || 'anon';
     const codigo = options.codigo || 'unknown';
-    const storageKey = `proyeccion_${rut}_${codigo}`;
+    const onSimulationChange = options.onSimulationChange || (() => {});
 
-    // Controls: save / restore / reset
-    const controls = document.createElement('div');
-    controls.className = 'mb-4 flex gap-2';
-    const saveBtn = document.createElement('button');
-    saveBtn.className = 'bg-green-500 text-white px-3 py-1 rounded';
-    saveBtn.textContent = 'Guardar escenario';
-    const restoreBtn = document.createElement('button');
-    restoreBtn.className = 'bg-blue-500 text-white px-3 py-1 rounded';
-    restoreBtn.textContent = 'Restaurar guardado';
-    const resetBtn = document.createElement('button');
-    resetBtn.className = 'bg-gray-300 text-black px-3 py-1 rounded';
-    resetBtn.textContent = 'Restablecer default';
-    controls.appendChild(saveBtn);
-    controls.appendChild(restoreBtn);
-    controls.appendChild(resetBtn);
-    // selection controls for simulating failures
-    const selectToggleBtn = document.createElement('button');
-    selectToggleBtn.className = 'bg-yellow-400 text-black px-3 py-1 rounded';
-    selectToggleBtn.textContent = 'Marcar para reprobar';
-    const clearSelectionBtn = document.createElement('button');
-    clearSelectionBtn.className = 'bg-gray-200 text-black px-3 py-1 rounded';
-    clearSelectionBtn.textContent = 'Limpiar selección';
-    const simulateBtn = document.createElement('button');
-    simulateBtn.className = 'bg-red-500 text-white px-3 py-1 rounded';
-    simulateBtn.textContent = 'Simular reprobar ramos';
-    // selection counter
-    const selectionCounter = document.createElement('span');
-    selectionCounter.className = 'ml-2 text-sm text-gray-700';
-    selectionCounter.textContent = 'Seleccionados: 0';
-    controls.appendChild(selectToggleBtn);
-    controls.appendChild(clearSelectionBtn);
-    controls.appendChild(simulateBtn);
-    controls.appendChild(selectionCounter);
-    container.appendChild(controls);
+    // 1. Panel de Estado
+    renderStatusPanel(container, projection);
 
-    const grid = document.createElement('div');
-    grid.style.display = 'flex';
-    grid.style.gap = '12px';
-    grid.style.overflowX = 'auto';
-    container.appendChild(grid);
+    // 2. Toolbar
+    renderToolbar(container, projection, rut, codigo, onSimulationChange, options);
 
-    // selection mode state
-    let selectionMode = false;
-    const selectedSet = new Set();
+    // 3. Grid Horizontal
+    const gridContainer = document.createElement('div');
+    gridContainer.className = "flex gap-4 overflow-x-auto pb-4 pt-2 snap-x min-h-[300px]";
+    container.appendChild(gridContainer);
 
-    function updateCardSelectionVisual(card, isSelected) {
-        if (isSelected) {
-            card.classList.add('border-4');
-            card.style.borderColor = '#f43f5e'; // red-500
-            card.style.boxShadow = '0 6px 10px rgba(244,63,94,0.15)';
-        } else {
-            card.classList.remove('border-4');
-            card.style.borderColor = '';
-            card.style.boxShadow = '';
-        }
-    }
+    const courseMap = new Map();
+    projection.semesters.forEach(s => s.courses.forEach(c => courseMap.set(c.codigo, c)));
 
-    function createCard(course) {
-        const card = document.createElement('div');
-        card.className = 'asignatura-card asignatura-pendiente';
-        card.draggable = !selectionMode;
-        card.dataset.code = course.codigo;
-        card.innerHTML = `
-            <div class="asignatura-nombre">${course.asignatura}</div>
-            <div class="asignatura-codigo">${course.codigo}</div>
-            <div class="asignatura-creditos">Créditos: ${course.creditos}</div>
+    projection.semesters.forEach((sem, idx) => {
+        const col = document.createElement('div');
+        col.className = "malla-nivel min-w-[240px] flex flex-col gap-2 p-3 bg-white rounded-lg border border-gray-300 shadow-sm snap-start transition-colors duration-200";
+        col.dataset.semIndex = idx;
+
+        // Semestre Header
+        const isOverloaded = sem.credits > maxCredits;
+        col.innerHTML = `
+            <div class="font-bold text-center border-b pb-2 mb-1 text-gray-700 flex justify-between items-center">
+                <span>Semestre ${idx + 1}</span>
+                <span class="text-xs px-2 py-1 rounded-full ${isOverloaded ? 'bg-red-100 text-red-700 font-bold' : 'bg-gray-100 text-gray-600'}">
+                    ${sem.credits}/${maxCredits} cr
+                </span>
+            </div>
+            <div class="semester-drop-zone flex-1 flex flex-col gap-2"></div>
         `;
-        card.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', course.codigo);
-        });
 
-        // click toggles selection if selectionMode is active
-        card.addEventListener('click', (e) => {
-            if (!selectionMode) return;
-            const code = course.codigo;
-            if (selectedSet.has(code)) {
-                selectedSet.delete(code);
-                updateCardSelectionVisual(card, false);
+        const dropZone = col.querySelector('.semester-drop-zone');
+
+        // --- Drag & Drop Events ---
+        col.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const draggedCode = window.__draggingCourse;
+            if (!draggedCode) return;
+
+            const canDrop = validarMovimiento(draggedCode, idx, projection, courseMap);
+            if (canDrop) {
+                col.classList.add('drop-valid');
+                col.classList.remove('drop-invalid');
+                e.dataTransfer.dropEffect = "move";
             } else {
-                selectedSet.add(code);
-                updateCardSelectionVisual(card, true);
+                col.classList.add('drop-invalid');
+                col.classList.remove('drop-valid');
+                e.dataTransfer.dropEffect = "none";
             }
-            // update counter
-            selectionCounter.textContent = `Seleccionados: ${selectedSet.size}`;
-            e.stopPropagation();
         });
-        // apply initial visual selection state
-        if (selectedSet.has(course.codigo)) updateCardSelectionVisual(card, true);
-        return card;
-    }
 
-    function updateDnDState() {
-        // update draggable attribute of existing cards
-        const cards = container.querySelectorAll('.asignatura-card');
-        cards.forEach(c => c.draggable = !selectionMode);
-        // reset counter when leaving selection mode
-        if (!selectionMode) selectionCounter.textContent = `Seleccionados: ${selectedSet.size}`;
-    }
+        col.addEventListener('dragleave', () => {
+            col.classList.remove('drop-valid', 'drop-invalid');
+        });
 
-    // Build helper map of all courses for prereq checks
-    const projectionAllByCode = {};
-    if (projection && projection.semesters) {
-        for (const s of projection.semesters) {
-            for (const c of s.courses) projectionAllByCode[c.codigo] = c;
-        }
-    }
-
-    // helper to check prereqs for a target semester index
-    function canPlaceInSemester(courseCode, targetIdx, completedSet) {
-        const course = projectionAllByCode[courseCode];
-        if (!course) return false;
-        const pList = course.prereqList || [];
-        for (const p of pList) {
-            if (completedSet && completedSet.has && completedSet.has(p)) continue;
-            // check if p is scheduled in an earlier semester (< targetIdx)
-            let foundEarlier = false;
-            for (let si = 0; si < targetIdx; si++) {
-                const s = projection.semesters[si];
-                if (!s) continue;
-                if (s.courses.find(c => c.codigo === p)) { foundEarlier = true; break; }
+        col.addEventListener('drop', (e) => {
+            e.preventDefault();
+            col.classList.remove('drop-valid', 'drop-invalid');
+            const code = e.dataTransfer.getData('text/plain');
+            
+            if (validarMovimiento(code, idx, projection, courseMap)) {
+                moverAsignatura(code, idx, projection);
+                renderProjection(container, projection, options);
+                onSimulationChange(projection);
+            } else {
+                alert("Movimiento inválido: Faltan prerrequisitos o rompe la cadena.");
             }
-            if (!foundEarlier) return false;
-        }
-        return true;
-    }
+            window.__draggingCourse = null;
+        });
 
-    function renderSemesters(semesters) {
-        grid.innerHTML = '';
-        semesters.forEach((sem, idx) => {
-            const col = document.createElement('div');
-            col.className = 'malla-nivel';
-            col.style.minWidth = '220px';
-            const header = document.createElement('div');
-            header.className = 'malla-nivel-header';
-            header.textContent = `Semestre ${idx + 1} — ${sem.credits} créditos`;
-            col.appendChild(header);
+        // Renderizar Cursos
+        sem.courses.forEach(course => {
+            const card = document.createElement('div');
+            card.className = "asignatura-card bg-blue-50 border border-blue-200 p-3 rounded cursor-grab shadow-sm hover:shadow-md select-none";
+            card.draggable = true;
+            card.innerHTML = `
+                <div class="font-bold text-sm text-gray-800 truncate" title="${course.asignatura}">${course.asignatura}</div>
+                <div class="flex justify-between items-center mt-1">
+                    <span class="text-xs text-gray-500 font-mono">${course.codigo}</span>
+                    <span class="text-xs bg-white px-1 rounded border border-gray-200">${course.creditos} cr</span>
+                </div>
+            `;
 
-            const list = document.createElement('div');
-            list.style.display = 'flex';
-            list.style.flexDirection = 'column';
-            list.style.gap = '8px';
-            list.dataset.semesterIndex = idx;
-
-            list.addEventListener('dragover', (e) => e.preventDefault());
-            list.addEventListener('drop', (e) => {
-                e.preventDefault();
-                const code = e.dataTransfer.getData('text/plain');
-                if (!code) return;
-                // find course in any semester
-                let moved = null;
-                for (const s of projection.semesters) {
-                    const i = s.courses.findIndex(c => c.codigo === code);
-                    if (i >= 0) {
-                        moved = s.courses.splice(i, 1)[0];
-                        s.credits -= moved.creditos || 0;
-                        break;
-                    }
-                }
-                if (moved) {
-                    const targetIdx = parseInt(list.dataset.semesterIndex, 10);
-                    // build completedSet from options if provided
-                    const completedSet = new Set((options.completed || []).slice());
-                    // also add courses that were originally completed (options.completed) and scheduled in earlier semesters
-                    // validate prereqs before placing
-                    if (!canPlaceInSemester(moved.codigo, targetIdx, completedSet)) {
-                        // rollback: put it back where it was (append to first semester that doesn't already include it)
-                        alert(`No se pueden mover ${moved.codigo} a Semestre ${targetIdx + 1}: prerrequisitos no satisfechos.`);
-                        // return moved to its previous place: we simply re-render without removing it from original earlier state
-                        // To simplify, recompute projection render (the moved was removed from its semester above), so push it back to nearest previous semester
-                        // Try to put it back into the earliest semester (index 0)
-                        projection.semesters[0].courses.push(moved);
-                        projection.semesters[0].credits += moved.creditos || 0;
-                        renderSemesters(projection.semesters);
-                        return;
-                    }
-
-                    // append to target semester
-                    projection.semesters[targetIdx].courses.push(moved);
-                    projection.semesters[targetIdx].credits += moved.creditos || 0;
-                    renderSemesters(projection.semesters);
-                }
+            card.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', course.codigo);
+                e.dataTransfer.effectAllowed = "move";
+                window.__draggingCourse = course.codigo;
+                setTimeout(() => card.classList.add('opacity-50'), 0);
             });
 
-            for (const course of sem.courses) {
-                const card = createCard(course);
-                list.appendChild(card);
-            }
+            card.addEventListener('dragend', () => {
+                card.classList.remove('opacity-50');
+                window.__draggingCourse = null;
+                container.querySelectorAll('.malla-nivel').forEach(c => c.classList.remove('drop-valid', 'drop-invalid'));
+            });
 
-            col.appendChild(list);
-            grid.appendChild(col);
+            dropZone.appendChild(card);
         });
-    }
 
-    // initial render
-    renderSemesters(projection.semesters);
-
-    saveBtn.addEventListener('click', () => {
-        (async () => {
-            try {
-                // Try to save to backend if available
-                const apiUrl = options.apiBaseUrl || API_BASE_URL;
-                let serverSaved = false;
-                if (apiUrl) {
-                    try {
-                        const resp = await fetch(`${apiUrl}/proyeccion`, {
-                            method: 'POST',
-                            credentials: 'include',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ codigoCarrera: codigo, name: `${rut}_${codigo}_${Date.now()}`, projection })
-                        });
-                        if (resp.ok) {
-                            const data = await resp.json();
-                            serverSaved = true;
-                            console.log('Proyección guardada en servidor id=', data.id);
-                            alert('Escenario guardado en servidor (id: ' + data.id + ')');
-                        } else {
-                            console.warn('No se pudo guardar en servidor, status=', resp.status);
-                        }
-                    } catch (err) {
-                        console.warn('Error comunicando con backend para guardar proyección:', err);
-                    }
-                }
-
-                // Always persist locally as fallback
-                try {
-                    localStorage.setItem(storageKey, JSON.stringify(projection));
-                } catch (e) {
-                    console.error('No se pudo guardar localmente:', e);
-                }
-
-                if (!serverSaved) alert('Escenario guardado localmente');
-            } catch (e) {
-                console.error('No se pudo guardar escenario:', e);
-                alert('Error guardando escenario');
-            }
-        })();
-    });
-
-    restoreBtn.addEventListener('click', () => {
-        (async () => {
-            try {
-                // Try to restore from server first
-                const apiUrl = options.apiBaseUrl || API_BASE_URL;
-                if (apiUrl) {
-                    try {
-                        const resp = await fetch(`${apiUrl}/proyeccion?codigo=${encodeURIComponent(codigo)}`, {
-                            method: 'GET',
-                            credentials: 'include'
-                        });
-                        if (resp.ok) {
-                            const data = await resp.json();
-                            if (data && Array.isArray(data.proyecciones) && data.proyecciones.length > 0) {
-                                // pick the latest by updatedAt
-                                data.proyecciones.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-                                const latest = data.proyecciones[0];
-                                if (latest && latest.projection && Array.isArray(latest.projection.semesters)) {
-                                    projection.semesters = latest.projection.semesters;
-                                    renderSemesters(projection.semesters);
-                                    alert('Escenario restaurado desde servidor');
-                                    return;
-                                }
-                            }
-                        }
-                    } catch (err) {
-                        console.warn('Error comunicando con backend al restaurar proyección:', err);
-                    }
-                }
-
-                // Fallback to localStorage
-                const raw = localStorage.getItem(storageKey);
-                if (!raw) return alert('No hay escenario guardado');
-                const obj = JSON.parse(raw);
-                projection.semesters = obj.semesters || projection.semesters;
-                renderSemesters(projection.semesters);
-                alert('Escenario restaurado');
-            } catch (e) {
-                console.error('Error restaurando:', e);
-                alert('Error restaurando escenario');
-            }
-        })();
-    });
-
-    resetBtn.addEventListener('click', () => {
-        // Recompute default if callback provided
-        if (typeof options.onReset === 'function') {
-            const newProj = options.onReset();
-            if (newProj && newProj.semesters) {
-                projection.semesters = newProj.semesters;
-                renderSemesters(projection.semesters);
-            }
-        }
-    });
-    // toggle selection mode
-    selectToggleBtn.addEventListener('click', () => {
-        selectionMode = !selectionMode;
-        selectToggleBtn.textContent = selectionMode ? 'Salir modo selección' : 'Marcar para reprobar';
-        // Re-render semesters to update draggable state and visuals
-        renderSemesters(projection.semesters);
-        updateDnDState();
-    });
-
-    clearSelectionBtn.addEventListener('click', () => {
-        selectedSet.clear();
-        renderSemesters(projection.semesters);
-    });
-
-    simulateBtn.addEventListener('click', () => {
-        // prefer selectedSet if non-empty
-        const codes = Array.from(selectedSet);
-        if (codes.length === 0) {
-            const input = prompt('Ingresa los códigos de las asignaturas que se reprobarán, separados por comas (ej: PROG100,ALGOR):');
-            if (!input) return;
-            const parsed = input.split(',').map(s => s.trim()).filter(Boolean);
-            if (parsed.length === 0) return alert('No se ingresaron códigos válidos.');
-            codes.push(...parsed);
-        }
-        const newProj = simulateFailures(projection, codes, { maxCreditsPerSemester: maxCredits });
-        if (newProj) {
-            projection.semesters = newProj.semesters;
-            // clear selection after applying
-            selectedSet.clear();
-            renderSemesters(projection.semesters);
-            alert('Simulación aplicada: ramos reprobados se han movido a semestres posteriores.');
-        } else {
-            alert('No se pudo simular reprobar los ramos especificados.');
-        }
+        gridContainer.appendChild(col);
     });
 }
 
-/**
- * Simulate failing some courses and reschedule them to later semesters.
- * - projection: original projection object (will not be mutated)
- * - failedCourseCodes: array of course codes to mark as failed
- * - opts: { maxCreditsPerSemester }
- * Returns a new projection object with rescheduled courses.
- */
-export function simulateFailures(projection, failedCourseCodes = [], opts = {}) {
-    const maxCredits = opts.maxCreditsPerSemester || 30;
-    if (!projection || !Array.isArray(projection.semesters)) return null;
+// --- Componentes UI Auxiliares ---
 
-    // Deep clone semesters
-    const semesters = projection.semesters.map(s => ({ credits: s.credits, courses: s.courses.map(c => ({ ...c })) }));
+function renderStatusPanel(container, projection) {
+    const isAlert = projection.studentStatus === 'ALERTA';
+    const panel = document.createElement('div');
+    panel.className = `mb-4 p-4 rounded-lg border-l-4 shadow-sm flex flex-wrap justify-between items-center ${
+        isAlert ? 'bg-red-50 border-red-500 text-red-900' : 'bg-green-50 border-green-500 text-green-900'
+    }`;
 
-    // Remove failed courses from their semesters and collect them to reschedule
-    const toReschedule = [];
-    for (const code of failedCourseCodes) {
-        for (let si = 0; si < semesters.length; si++) {
-            const s = semesters[si];
-            const idx = s.courses.findIndex(c => c.codigo === code);
-            if (idx >= 0) {
-                const [removed] = s.courses.splice(idx, 1);
-                s.credits = Math.max(0, s.credits - (removed.creditos || 0));
-                // record original semester index so we reschedule after it
-                removed.__originalSemester = si;
-                toReschedule.push(removed);
-                break;
-            }
-        }
-    }
-
-    // Greedily try to place each failed course in the next semesters after its original position
-    for (const failed of toReschedule) {
-        // find earliest semester index where it previously was (approximate by level)
-        // We'll search from semester 0 forward and place in the first semester where prereqs are satisfied and capacity allows
-        let placed = false;
-    const startTarget = (typeof failed.__originalSemester === 'number') ? failed.__originalSemester + 1 : 0;
-    for (let target = startTarget; target < semesters.length; target++) {
-            // compute set of codes available in earlier semesters
-            const earlierCodes = new Set();
-            for (let si = 0; si < target; si++) {
-                for (const c of semesters[si].courses) earlierCodes.add(c.codigo);
-            }
-            // check prereqs satisfied
-            const prereqs = (failed.prereq || '').split(',').map(s => s.trim()).filter(Boolean);
-            let ok = true;
-            for (const p of prereqs) {
-                // if prereq equals the failed code itself, it's not satisfied now
-                if (!earlierCodes.has(p)) { ok = false; break; }
-            }
-            if (!ok) continue;
-            // check capacity
-            if ((semesters[target].credits || 0) + (failed.creditos || 0) <= maxCredits) {
-                semesters[target].courses.push(failed);
-                semesters[target].credits = (semesters[target].credits || 0) + (failed.creditos || 0);
-                placed = true;
-                break;
-            }
-        }
-
-        // if not placed, add new semesters until it fits
-        if (!placed) {
-            let inserted = false;
-            while (!inserted) {
-                const newSem = { credits: 0, courses: [] };
-                semesters.push(newSem);
-                if ((newSem.credits || 0) + (failed.creditos || 0) <= maxCredits) {
-                    newSem.courses.push(failed);
-                    newSem.credits += failed.creditos || 0;
-                    inserted = true;
-                }
-            }
-        }
-    }
-
-    return { semesters, warnings: [`Simulación aplicada: ${toReschedule.length} ramos reprogramados`] };
+    panel.innerHTML = `
+        <div>
+            <h3 class="font-bold text-lg flex items-center gap-2">
+                ${isAlert ? '🚫 ALERTA ACADÉMICA' : '✅ Estado Académico Regular'}
+            </h3>
+            <p class="text-sm opacity-90">
+                Carga máxima: <strong>${projection.maxCreditsAllowed} créditos</strong>.
+            </p>
+        </div>
+        <div class="text-right mt-2 sm:mt-0">
+            <div class="text-xs uppercase tracking-wide opacity-70">Egreso Estimado</div>
+            <div class="text-2xl font-bold">${projection.estimatedGraduation || '--'}</div>
+        </div>
+    `;
+    container.appendChild(panel);
 }
+
+function renderToolbar(container, projection, rut, codigo, onSimChange, options) {
+    const toolbar = document.createElement('div');
+    toolbar.className = "flex flex-wrap gap-2 mb-4 bg-gray-100 p-2 rounded-md border border-gray-200";
+
+    const btnSimulate = createButton('Simular Reprobación', 'bg-orange-500 text-white hover:bg-orange-600', () => {
+        const input = prompt("Ingresa código a reprobar (ej: PROG100):");
+        if(input) alert(`Simulando reprobación de ${input} (placeholder).`);
+    });
+
+    const btnSave = createButton('Guardar Escenario', 'bg-blue-600 text-white hover:bg-blue-700', () => {
+        const name = prompt("Nombre del escenario:", `Plan ${new Date().toLocaleDateString()}`);
+        if (name) guardarProyeccionEnBackend(projection, rut, codigo, name);
+    });
+
+    const btnLoad = createButton('Cargar Escenario', 'bg-gray-600 text-white hover:bg-gray-700', () => {
+        cargarProyeccionDeBackend(rut, codigo, (loaded) => {
+            renderProjection(container, loaded, options);
+            onSimChange(loaded);
+        });
+    });
+    
+    const btnReset = createButton('Resetear', 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50', () => {
+        if(options.onReset) {
+            const fresh = options.onReset();
+            renderProjection(container, fresh, options);
+            onSimChange(fresh);
+        }
+    });
+
+    toolbar.appendChild(btnSimulate);
+    toolbar.appendChild(btnSave);
+    toolbar.appendChild(btnLoad);
+    toolbar.appendChild(btnReset);
+    container.appendChild(toolbar);
+}
+
+function createButton(text, classes, onClick) {
+    const btn = document.createElement('button');
+    btn.textContent = text;
+    btn.className = `px-3 py-1.5 rounded text-sm font-medium transition-colors ${classes}`;
+    btn.onclick = onClick;
+    return btn;
+}
+
+// --- Lógica de Validación y Movimiento ---
+
+function validarMovimiento(courseCode, targetSemIdx, projection, courseMap) {
+    const course = courseMap.get(courseCode);
+    if (!course) return false;
+
+    const prereqs = course.prereqList || [];
+    for (const pre of prereqs) {
+        let foundAt = -Infinity; // Asumimos aprobado históricamente (fuera de proyección)
+        
+        // Buscar si el prerequisito está en la proyección futura
+        projection.semesters.forEach((s, idx) => {
+            if (s.courses.find(c => c.codigo === pre)) foundAt = idx;
+        });
+
+        // El prerequisito debe estar en un semestre estrictamente anterior
+        if (foundAt >= targetSemIdx) return false; 
+    }
+    return true;
+}
+
+function moverAsignatura(code, targetSemIdx, projection) {
+    let courseObj = null;
+    // Quitar de origen
+    for (const sem of projection.semesters) {
+        const idx = sem.courses.findIndex(c => c.codigo === code);
+        if (idx !== -1) {
+            courseObj = sem.courses.splice(idx, 1)[0];
+            sem.credits -= courseObj.creditos;
+            break;
+        }
+    }
+    // Agregar a destino
+    if (courseObj) {
+        projection.semesters[targetSemIdx].courses.push(courseObj);
+        projection.semesters[targetSemIdx].credits += courseObj.creditos;
+    }
+}
+
+// --- API Helpers ---
+
+async function guardarProyeccionEnBackend(proj, rut, codigo, name) {
+    try {
+        const body = { userId: rut, codigoCarrera: codigo, name, projection: proj };
+        const resp = await fetch(`${API_BASE_URL}/proyeccion`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            credentials: 'include'
+        });
+        if (resp.ok) alert("Proyección guardada.");
+        else alert("Error al guardar.");
+    } catch (e) { console.error(e); alert("Error de conexión"); }
+}
+
+async function cargarProyeccionDeBackend(rut, codigo, onSuccess) {
+    try {
+        const resp = await fetch(`${API_BASE_URL}/proyeccion?codigo=${codigo}`, { credentials: 'include' });
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data.proyecciones && data.proyecciones.length > 0) {
+                // Cargar la última
+                const latest = data.proyecciones[data.proyecciones.length - 1];
+                onSuccess(latest.projection);
+                alert(`Cargada proyección: ${latest.name}`);
+            } else {
+                alert("No hay proyecciones guardadas.");
+            }
+        }
+    } catch (e) { console.error(e); }
+}
+
+// Función stub para tests
+export function simulateFailures(projection) { return projection; }

@@ -1,75 +1,7 @@
 [
   {
-    "id": "28ce54ab48df134cf895e50a50c4284324beecf0144354219b3b06da2f7bfc80",
-    "token": "f3149934878375949b693550652d36dffaa60b95628357441181570247a8ec78",
-    "userId": "222222222",
-    "email": "maria@example.com",
-    "carreras": [
-      {
-        "codigo": "8266",
-        "nombre": "ITI",
-        "catalogo": "202410"
-      }
-    ],
-    "createdAt": 1763410856207,
-    "lastActivity": 1763410870761,
-    "expiresAt": 1763497256207,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/123.0.0.0"
-  },
-  {
-    "id": "f478590317d7dc58351e51fe74fd41245e193c515cdfe1dac849ac907016a30d",
-    "token": "a627df7f78a3434555073f703e622192dda55a6ea3b7078f0c3de1b4d60cf642",
-    "userId": "222222222",
-    "email": "maria@example.com",
-    "carreras": [
-      {
-        "codigo": "8266",
-        "nombre": "ITI",
-        "catalogo": "202410"
-      }
-    ],
-    "createdAt": 1763410917483,
-    "lastActivity": 1763411153427,
-    "expiresAt": 1763497317483,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/123.0.0.0"
-  },
-  {
-    "id": "0745ebf8c5f78fb9c781f6505ed1c59417c6e5aba47f1ecf7ac433cf95bb0746",
-    "token": "de2c76cd04f13e8733c4c3f1ccbb40874c657b6c769c0be5508d8f8b88ee7cef",
-    "userId": "222222222",
-    "email": "maria@example.com",
-    "carreras": [
-      {
-        "codigo": "8266",
-        "nombre": "ITI",
-        "catalogo": "202410"
-      }
-    ],
-    "createdAt": 1763410918502,
-    "lastActivity": 1763410918502,
-    "expiresAt": 1763497318502,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/123.0.0.0"
-  },
-  {
-    "id": "15fbfe50630094e0623529d45fea6763b1043099a69c022a64c96b2c9969f3d0",
-    "token": "731184b648d383c1c1c26b2e72a9908a53f3a5983b42dbef96502eb28ceb88c5",
-    "userId": "222222222",
-    "email": "maria@example.com",
-    "carreras": [
-      {
-        "codigo": "8266",
-        "nombre": "ITI",
-        "catalogo": "202410"
-      }
-    ],
-    "createdAt": 1763412366422,
-    "lastActivity": 1763412369125,
-    "expiresAt": 1763498766422,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/123.0.0.0"
-  },
-  {
-    "id": "1afe40782a82eff479a8992eac9ad2a5e6f7ea1fbc5d7886c278a47eadfbc238",
-    "token": "f0102eba3b0190c39b5e4d6f2f2a8eff9836d7be99196a44e09a3cae51fb0520",
+    "id": "60d26146259b107ec2dbce4a22b14621ab4cbc77d6b00edc65ca5fff542abbef",
+    "token": "35fcabe45940283e41039d0b08ac7183c3e1568c0d078ac7325adaf2259cd95f",
     "userId": "333333333",
     "email": "ximena@example.com",
     "carreras": [
@@ -84,53 +16,9 @@
         "catalogo": "202310"
       }
     ],
-    "createdAt": 1763414179231,
-    "lastActivity": 1763414190651,
-    "expiresAt": 1763500579231,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/123.0.0.0"
-  },
-  {
-    "id": "9674eae9a4bc2396a392f75865889352259c7f558c0b615197fb0c7bc404caeb",
-    "token": "dc3e8c0940900362644ece1d066b9116d46b9552ed1ce905ceb807c381c8b316",
-    "userId": "333333333",
-    "email": "ximena@example.com",
-    "carreras": [
-      {
-        "codigo": "8266",
-        "nombre": "ITI",
-        "catalogo": "202410"
-      },
-      {
-        "codigo": "8616",
-        "nombre": "ICI",
-        "catalogo": "202310"
-      }
-    ],
-    "createdAt": 1763414180240,
-    "lastActivity": 1763414207758,
-    "expiresAt": 1763500580240,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/123.0.0.0"
-  },
-  {
-    "id": "23d83b2a709519ceca96f11269baedb570c6ae4f1a5afa9509451ecb33e888ab",
-    "token": "663e95c9d91ae5d021f109eca2b37a61c80c0820f463123d55b1e56f99794909",
-    "userId": "333333333",
-    "email": "ximena@example.com",
-    "carreras": [
-      {
-        "codigo": "8266",
-        "nombre": "ITI",
-        "catalogo": "202410"
-      },
-      {
-        "codigo": "8616",
-        "nombre": "ICI",
-        "catalogo": "202310"
-      }
-    ],
-    "createdAt": 1763414267923,
-    "lastActivity": 1763414362307,
-    "expiresAt": 1763500667923,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/123.0.0.0"
+    "createdAt": 1763755725530,
+    "lastActivity": 1763755731382,
+    "expiresAt": 1763842125530,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
   }
 ]

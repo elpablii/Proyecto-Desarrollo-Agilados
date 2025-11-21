@@ -6,115 +6,78 @@
     <title>Malla Curricular - UCN</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilos personalizados para la malla */
-        
-        /* Contenedor principal de la malla (grid) */
-        #malla-grid {
-            display: flex; /* Cambiado a flex para desplazamiento horizontal */
-            flex-direction: row;
-            overflow-x: auto; /* Permite scroll horizontal */
-            padding: 16px;
-            gap: 8px; /* Espacio entre niveles */
-            background-color: #f9fafb; /* bg-gray-50 */
-            border: 1px solid #e5e7eb; /* border-gray-200 */
-            border-radius: 8px;
-            min-height: 400px;
-        }
+        /* --- Estilos Base Malla --- */
+    #malla-grid {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 16px;
+        gap: 12px;
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        min-height: 450px;
+        scroll-snap-type: x mandatory;
+    }
+    .malla-nivel {
+        flex: 0 0 260px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        transition: all 0.2s ease;
+        scroll-snap-align: start;
+    }
+    .malla-nivel-header {
+        font-weight: 700;
+        text-align: center;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e5e7eb;
+        color: #374151;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .asignatura-card {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 10px;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        transition: transform 0.1s, box-shadow 0.1s;
+        cursor: grab;
+        background-color: #fff;
+        user-select: none;
+    }
+    .asignatura-card:active { cursor: grabbing; transform: scale(1.02); }
+    
+    /* Colores de Estado de Asignatura */
+    .asignatura-pendiente { background-color: #f3f4f6; border-left: 4px solid #9ca3af; }
+    .asignatura-aprobada { background-color: #dcfce7; border-left: 4px solid #22c55e; opacity: 0.7; }
+    .asignatura-reprobada { background-color: #fee2e2; border-left: 4px solid #ef4444; }
+    .asignatura-cursando { background-color: #dbeafe; border-left: 4px solid #3b82f6; }
 
-        /* Columna para cada nivel */
-        .malla-nivel {
-            flex: 0 0 200px; /* Ancho fijo para cada nivel, no se encoge */
-            display: flex;
-            flex-direction: column;
-            gap: 8px; /* Espacio entre asignaturas */
-            padding: 8px;
-            background-color: #ffffff; /* bg-white */
-            border-radius: 6px;
-            border: 1px solid #d1d5db; /* border-gray-300 */
-        }
-
-        /* Cabecera del nivel (Nivel I, Nivel II, etc.) */
-        .malla-nivel-header {
-            font-weight: 600; /* font-semibold */
-            text-align: center;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #6b7280; /* border-b-2 border-gray-500 */
-            color: #1f2937; /* text-gray-800 */
-        }
-
-        /* Tarjeta para cada asignatura */
-        .asignatura-card {
-            border: 1px solid #d1d5db; /* border-gray-300 */
-            border-radius: 6px;
-            padding: 12px;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
-            transition: all 0.2s ease-in-out;
-            cursor: pointer;
-        }
-
-        .asignatura-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* shadow-md */
-        }
-
-        /* Nombres y códigos */
-        .asignatura-nombre {
-            font-weight: 600; /* font-semibold */
-            font-size: 0.875rem; /* text-sm */
-            color: #1f2937; /* text-gray-800 */
-        }
-        .asignatura-codigo {
-            font-size: 0.75rem; /* text-xs */
-            color: #6b7280; /* text-gray-500 */
-        }
-        .asignatura-creditos, .asignatura-prereq {
-            font-size: 0.75rem; /* text-xs */
-            color: #4b5563; /* text-gray-600 */
-            margin-top: 4px;
-        }
-        .asignatura-prereq {
-            color: #b91c1c; /* text-red-700 */
-            font-style: italic;
-        }
-        
-        /* --- Estados de Asignatura --- */
-
-        /* Estado por defecto (pendiente) */
-        .asignatura-pendiente {
-            background-color: #f3f4f6; /* bg-gray-100 */
-            border-color: #d1d5db; /* border-gray-300 */
-        }
-        .asignatura-pendiente .asignatura-nombre {
-            color: #374151; /* text-gray-700 */
-        }
-
-        /* Estado aprobada */
-        .asignatura-aprobada {
-            background-color: #dcfce7; /* bg-green-100 */
-            border-color: #86efac; /* border-green-300 */
-        }
-        .asignatura-aprobada .asignatura-nombre {
-            color: #15803d; /* text-green-800 */
-        }
-
-        /* Estado reprobada (ejemplo) */
-        .asignatura-reprobada {
-            background-color: #fee2e2; /* bg-red-100 */
-            border-color: #fca5a5; /* border-red-300 */
-        }
-        .asignatura-reprobada .asignatura-nombre {
-            color: #b91c1c; /* text-red-700 */
-        }
-
-        /* Estado cursando (ejemplo) */
-        .asignatura-cursando {
-            background-color: #dbeafe; /* bg-blue-100 */
-            border-color: #93c5fd; /* border-blue-300 */
-        }
-        .asignatura-cursando .asignatura-nombre {
-            color: #1d4ed8; /* text-blue-800 */
-        }
-
+    /* --- NUEVO: Feedback Visual Drag & Drop --- */
+    /* Cuando arrastras un ramo sobre un semestre válido */
+    .drop-valid {
+        background-color: #f0fdf4 !important; /* Verde muy claro */
+        border-color: #22c55e !important;
+        box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+    }
+    /* Cuando arrastras un ramo sobre un semestre inválido (no cumple prerequisitos) */
+    .drop-invalid {
+        background-color: #fef2f2 !important; /* Rojo muy claro */
+        border-color: #ef4444 !important;
+        opacity: 0.6;
+    }
+    .drop-zone-active {
+        min-height: 60px;
+        background-color: rgba(0,0,0,0.02);
+        border-radius: 4px;
+        border: 2px dashed #cbd5e1;
+    }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen"> 
