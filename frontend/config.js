@@ -3,9 +3,9 @@
  * Define constantes que pueden ser usadas en toda la aplicación.
  */
 
+// Detectar si estamos en un entorno de navegador
+const isBrowser = typeof window !== 'undefined';
+
 // Define la URL base del servidor backend/proxy.
-// Para Docker: Si ambos servicios están en la misma red de Docker Compose,
-// el frontend (navegador) accede al backend a través del puerto expuesto del host.
-// Por defecto usa localhost, pero puede configurarse via variable de entorno
-// en el servidor que sirve el frontend.
-export const API_BASE_URL = window.ENV_API_URL || 'http://localhost:3001';
+// Usa window.ENV_API_URL si está disponible (navegador), de lo contrario usa localhost.
+export const API_BASE_URL = (isBrowser && window.ENV_API_URL) || 'http://localhost:3001';

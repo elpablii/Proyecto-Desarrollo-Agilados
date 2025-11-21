@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     onSimulationChange: (updatedProj) => {
                         console.log("Simulación actualizada:", updatedProj);
                         // Futuro: actualizar malla principal para mostrar impacto
-                        // highlightDelayedCourses(updatedProj);
+                        highlightDelayedCourses(updatedProj);
                     }
                 });
             }
@@ -123,6 +123,12 @@ function renderMalla(malla, avance) {
         mostrarError('No hay datos de malla.');
         return;
     }
+
+    // 1. Crear un mapa para traducir Código -> Nombre
+    const nombreAsignaturaMap = new Map();
+    malla.forEach(a => {
+        nombreAsignaturaMap.set(a.codigo, a.asignatura);
+    });
 
     const aprobados = new Set(avance.filter(a => a.status === 'APROBADO').map(a => a.course));
     const reprobados = new Set(avance.filter(a => a.status === 'REPROBADO').map(a => a.course));
@@ -160,13 +166,27 @@ function renderMalla(malla, avance) {
             else if (cursando.has(asignatura.codigo)) estadoClass = 'asignatura-cursando';
             
             card.classList.add(estadoClass);
-            card.dataset.codigo = asignatura.codigo; // Útil para buscarla luego
+            card.dataset.codigo = asignatura.codigo;
+
+            // 2. Generar el texto del tooltip con Nombres
+            let tooltipText = "";
+            if (asignatura.prereq) {
+                const codigosReq = asignatura.prereq.split(',');
+                const nombresReq = codigosReq.map(c => {
+                    const nombre = nombreAsignaturaMap.get(c.trim());
+                    // Si encontramos el nombre lo usamos, si no, dejamos el código (por si es externo)
+                    return nombre ? `• ${nombre}` : `• ${c}`;
+                });
+                tooltipText = "Prerrequisitos:\n" + nombresReq.join('\n');
+            }
 
             card.innerHTML = `
                 <div class="asignatura-nombre" title="${asignatura.asignatura}">${asignatura.asignatura}</div>
                 <div class="asignatura-codigo">${asignatura.codigo}</div>
                 <div class="asignatura-creditos">Créditos: ${asignatura.creditos}</div>
-                ${asignatura.prereq ? `<div class="asignatura-prereq" title="${asignatura.prereq}">Req: ${asignatura.prereq.split(',').length}</div>` : ''}
+                ${asignatura.prereq ? 
+                    `<div class="asignatura-prereq" title="${tooltipText}">Req: ${asignatura.prereq.split(',').length}</div>` 
+                    : ''}
             `;
             
             nivelContainer.appendChild(card);
@@ -190,4 +210,32 @@ function mostrarError(mensaje) {
             errorState.style.display = 'none';
         }
     }
+}
+
+function highlightDelayedCourses(projection) {
+    // 1. Limpiar estilos previos de simulación
+    document.querySelectorAll('.asignatura-card').forEach(card => {
+        card.classList.remove('border-orange-500', 'border-4', 'opacity-50');
+    });
+
+    if (!projection || !projection.semesters) return;
+
+    // 2. Recorrer la proyección para ver cuándo se toma cada ramo
+    projection.semesters.forEach((sem, index) => {
+        const semestreNumero = index + 1;
+        
+        sem.courses.forEach(curso => {
+            // Buscar la tarjeta en la malla principal
+            const card = document.querySelector(`.asignatura-card[data-codigo="${curso.codigo}"]`);
+            if (card) {
+                // Lógica de ejemplo: Si el ramo se toma después del semestre 5, marcarlo
+                // O podrías comparar contra el "nivel" ideal del ramo.
+                if (semestreNumero > curso.nivel) {
+                     // Ramo atrasado visualmente
+                     card.classList.add('border-orange-500', 'border-2');
+                     card.title = `Proyectado para semestre ${semestreNumero} (Atrasado)`;
+                }
+            }
+        });
+    });
 }

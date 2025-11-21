@@ -87,3 +87,65 @@ describe('computeProjection', () => {
         expect(res.semesters.length).toBeGreaterThan(1);
     });
 });
+
+import { detectarAlertaAcademica } from '../malla/proyeccion.js'; // Asegúrate de importar esta función arriba
+
+describe('Reglas de Negocio: Alerta Académica', () => {
+
+    test('detecta alerta por reprobar una asignatura 3 veces (Regla 2)', () => {
+        const historial = [
+            { course: 'MAT101', status: 'REPROBADO', period: '2022-1' },
+            { course: 'MAT101', status: 'REPROBADO', period: '2022-2' },
+            { course: 'MAT101', status: 'REPROBADO', period: '2023-1' } // 3er intento
+        ];
+        const esAlerta = detectarAlertaAcademica(historial);
+        expect(esAlerta).toBe(true);
+    });
+
+    test('detecta alerta por reprobar 2 asignaturas en 2da oportunidad el mismo semestre (Regla 1)', () => {
+        const historial = [
+            // Intento 1 (anterior)
+            { course: 'MAT101', status: 'REPROBADO', period: '2022-1' },
+            { course: 'FIS101', status: 'REPROBADO', period: '2022-1' },
+            
+            // Intento 2 (mismo periodo 2022-2)
+            { course: 'MAT101', status: 'REPROBADO', period: '2022-2' },
+            { course: 'FIS101', status: 'REPROBADO', period: '2022-2' }
+        ];
+        const esAlerta = detectarAlertaAcademica(historial);
+        expect(esAlerta).toBe(true);
+    });
+
+    test('NO detecta alerta si las reprobaciones están dispersas', () => {
+        const historial = [
+            { course: 'MAT101', status: 'REPROBADO', period: '2022-1' }, // 1ra vez
+            { course: 'FIS101', status: 'REPROBADO', period: '2022-2' }  // 1ra vez
+        ];
+        expect(detectarAlertaAcademica(historial)).toBe(false);
+    });
+
+    test('restringe automáticamente a 15 créditos si hay alerta', () => {
+        // Usuario en alerta
+        const historialAlerta = [
+            { course: 'X', status: 'REPROBADO', period: '1' },
+            { course: 'X', status: 'REPROBADO', period: '2' },
+            { course: 'X', status: 'REPROBADO', period: '3' }
+        ];
+        
+        // Malla con 2 ramos de 10 créditos cada uno (Total 20)
+        const mallaTest = [
+            { codigo: 'A', creditos: 10, nivel: 1, prereq: '' },
+            { codigo: 'B', creditos: 10, nivel: 1, prereq: '' }
+        ];
+
+        // Ejecutar proyección pidiendo 30 créditos
+        const resultado = computeProjection(mallaTest, historialAlerta, { maxCreditsPerSemester: 30 });
+
+        // Verificaciones
+        expect(resultado.studentStatus).toBe('ALERTA');
+        expect(resultado.maxCreditsAllowed).toBe(15); // El sistema debió forzar 15
+        
+        // Como 20 créditos > 15, debió dividir en 2 semestres
+        expect(resultado.semesters.length).toBe(2); 
+    });
+});

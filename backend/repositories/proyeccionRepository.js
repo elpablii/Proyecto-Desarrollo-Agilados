@@ -59,9 +59,23 @@ const findById = (id) => {
     return proyecciones.find(p => p.id === id);
 };
 
+const deleteById = async (id) => {
+    const initialLength = proyecciones.length;
+    // Filtrar para quitar el elemento con ese ID
+    proyecciones = proyecciones.filter(p => p.id !== id);
+    
+    // Si la longitud cambió, significa que borramos algo
+    if (proyecciones.length !== initialLength) {
+        await saveProyeccionesToDisk(); // Persistir cambios
+        return true;
+    }
+    return false; // No se encontró
+};
+
 module.exports = {
     loadProyeccionesFromDisk,
     save,
     findByUser,
-    findById
+    findById,
+    deleteById
 };

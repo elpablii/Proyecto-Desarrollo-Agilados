@@ -20,5 +20,66 @@
     "lastActivity": 1763755731382,
     "expiresAt": 1763842125530,
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "eea2f3fb6308aa2a255746ee91d2b45bd876d974c3d2966c348b5639b695356f",
+    "token": "238f84dadd318c17792eaea79971119e5775b58be55569ed1122155082b146bc",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "ITI",
+        "catalogo": "202410"
+      },
+      {
+        "codigo": "8616",
+        "nombre": "ICI",
+        "catalogo": "202310"
+      }
+    ],
+    "createdAt": 1763758254165,
+    "lastActivity": 1763758297872,
+    "expiresAt": 1763844654165,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "7a5662f0526eb4aa3063359b3dab15d2410ce4a103fa9e857e1191e09ea43b97",
+    "token": "8cc0571ad9294e75fb42a6868678631e1ff995a3120a6e0eab1919fa70debb82",
+    "userId": "222222222",
+    "email": "maria@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "ITI",
+        "catalogo": "202410"
+      }
+    ],
+    "createdAt": 1763760510615,
+    "lastActivity": 1763760516636,
+    "expiresAt": 1763846910615,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "82e14a078413306b88ac97f1eac6f053017edcca0fc40a8488ff50f32503c57a",
+    "token": "7c39609a5f45fd4515d9d259c815b8486ddc8c9120a3893b52a41f5472c6a07e",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "ITI",
+        "catalogo": "202410"
+      },
+      {
+        "codigo": "8616",
+        "nombre": "ICI",
+        "catalogo": "202310"
+      }
+    ],
+    "createdAt": 1763761267157,
+    "lastActivity": 1763761627052,
+    "expiresAt": 1763847667157,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
   }
 ]

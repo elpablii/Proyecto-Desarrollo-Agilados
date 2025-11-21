@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { saveProyeccion, listProyecciones, getProyeccion } = require('../controllers/proyeccionController');
+const { saveProyeccion, listProyecciones, getProyeccion, deleteProyeccion } = require('../controllers/proyeccionController');
 const { authenticateSession } = require('../middleware/authMiddleware');
 
 // --- Importar validación ---
@@ -13,5 +13,7 @@ router.use(authenticateSession); // Aplica autenticación a todas
 router.post('/', saveProyeccionRules(), handleValidationErrors, saveProyeccion);
 router.get('/', listProyecciones); // GET (Listar) no necesita validación estricta de query params
 router.get('/:id', getProyeccionRules(), handleValidationErrors, getProyeccion);
+
+router.delete('/:id', getProyeccionRules(), handleValidationErrors, deleteProyeccion);
 
 module.exports = router;

@@ -26,7 +26,7 @@ export function detectarAlertaAcademica(avance) {
     const intentosPorCurso = {}; // Map<codigo, int>
     const reprobacionesPorSemestre = {}; // Map<periodo, Array<{codigo, intento}>>
 
-    // Ordenar cronológicamente
+    // Ordenar cronológicamente (es importante para contar intentos en orden)
     const historialOrdenado = [...avance].sort((a, b) => (a.period || '').localeCompare(b.period || ''));
 
     for (const registro of historialOrdenado) {
@@ -36,7 +36,7 @@ export function detectarAlertaAcademica(avance) {
 
         if (!intentosPorCurso[codigo]) intentosPorCurso[codigo] = 0;
         
-        // Solo contamos intentos si el ramo fue inscrito (asumimos que aparece en el historial)
+        // Contamos intento
         intentosPorCurso[codigo]++;
         const numeroIntento = intentosPorCurso[codigo];
 
@@ -165,7 +165,12 @@ export function computeProjection(malla, avance, options = {}) {
 
         if (eligible.length === 0) {
             warnings.push('No se puede completar la proyección (posible ciclo o datos faltantes).');
-            break;
+            // [CORRECCIÓN PARA TESTS]: Retornar objeto con propiedad error
+            return { 
+                semesters, 
+                warnings,
+                error: "Ciclo de prerrequisitos detectado o datos inconsistentes" 
+            };
         }
 
         // Ordenar por prioridad
@@ -207,6 +212,56 @@ export function computeProjection(malla, avance, options = {}) {
     };
 }
 
+/**
+ * Simula la reprobación de asignaturas y re-calcula la proyección.
+ * [CORRECCIÓN PARA TESTS]: Implementación real de la lógica de re-planificación.
+ */
+export function simulateFailures(projection, failedCodes, options = {}) {
+    const maxCredits = options.maxCreditsPerSemester || projection.maxCreditsAllowed || 30;
+    // Clonar para no mutar el original
+    const newProjection = JSON.parse(JSON.stringify(projection));
+    
+    for (const code of failedCodes) {
+        let removedCourse = null;
+        let removedFromIndex = -1;
+
+        // 1. Quitar del semestre donde estaba
+        for (let i = 0; i < newProjection.semesters.length; i++) {
+            const sem = newProjection.semesters[i];
+            const idx = sem.courses.findIndex(c => c.codigo === code);
+            if (idx !== -1) {
+                removedCourse = sem.courses.splice(idx, 1)[0];
+                sem.credits -= removedCourse.creditos;
+                removedFromIndex = i;
+                break;
+            }
+        }
+
+        // 2. Reinsertar en un semestre futuro
+        if (removedCourse) {
+            let inserted = false;
+            // Buscar cupo desde el siguiente semestre en adelante
+            for (let i = removedFromIndex + 1; i < newProjection.semesters.length; i++) {
+                const sem = newProjection.semesters[i];
+                if (sem.credits + removedCourse.creditos <= maxCredits) {
+                    sem.courses.push(removedCourse);
+                    sem.credits += removedCourse.creditos;
+                    inserted = true;
+                    break;
+                }
+            }
+            // Si no cupo en ninguno existente, crear uno nuevo al final
+            if (!inserted) {
+                newProjection.semesters.push({
+                    courses: [removedCourse],
+                    credits: removedCourse.creditos
+                });
+            }
+        }
+    }
+    return newProjection;
+}
+
 /* ==========================================
    SECCIÓN 2: INTERFAZ DE USUARIO (RENDER)
    ========================================== */
@@ -223,7 +278,7 @@ export function renderProjection(container, projection, options = {}) {
     // 1. Panel de Estado
     renderStatusPanel(container, projection);
 
-    // 2. Toolbar
+    // 2. Toolbar (Con gestión de escenarios)
     renderToolbar(container, projection, rut, codigo, onSimulationChange, options);
 
     // 3. Grid Horizontal
@@ -355,7 +410,11 @@ function renderToolbar(container, projection, rut, codigo, onSimChange, options)
 
     const btnSimulate = createButton('Simular Reprobación', 'bg-orange-500 text-white hover:bg-orange-600', () => {
         const input = prompt("Ingresa código a reprobar (ej: PROG100):");
-        if(input) alert(`Simulando reprobación de ${input} (placeholder).`);
+        if(input) {
+            const newProj = simulateFailures(projection, [input], options);
+            renderProjection(container, newProj, options);
+            onSimChange(newProj);
+        }
     });
 
     const btnSave = createButton('Guardar Escenario', 'bg-blue-600 text-white hover:bg-blue-700', () => {
@@ -363,11 +422,49 @@ function renderToolbar(container, projection, rut, codigo, onSimChange, options)
         if (name) guardarProyeccionEnBackend(projection, rut, codigo, name);
     });
 
-    const btnLoad = createButton('Cargar Escenario', 'bg-gray-600 text-white hover:bg-gray-700', () => {
-        cargarProyeccionDeBackend(rut, codigo, (loaded) => {
-            renderProjection(container, loaded, options);
-            onSimChange(loaded);
-        });
+    // [MEJORA] Botón Cargar con gestión completa (Listar y Borrar)
+    const btnLoad = createButton('Gestionar Escenarios', 'bg-gray-600 text-white hover:bg-gray-700', async () => {
+        try {
+            const resp = await fetch(`${API_BASE_URL}/proyeccion?codigo=${codigo}`, { credentials: 'include' });
+            if (resp.ok) {
+                const data = await resp.json();
+                const lista = data.proyecciones;
+                
+                if (!lista || lista.length === 0) {
+                    alert("No hay escenarios guardados.");
+                    return;
+                }
+
+                // Crear lista para el prompt
+                let mensaje = "Escribe el ID del escenario para CARGAR (o escribe 'BORRAR [ID]' para eliminar):\n\n";
+                lista.forEach((p) => {
+                    // Mostramos ID corto para facilitar lectura
+                    mensaje += `${p.id} - ${p.name} (${new Date(p.createdAt).toLocaleDateString()})\n`;
+                });
+
+                const seleccion = prompt(mensaje);
+                if (!seleccion) return;
+
+                if (seleccion.startsWith('BORRAR')) {
+                    // Lógica de eliminación
+                    const idBorrar = seleccion.split(' ')[1];
+                    if(idBorrar) {
+                        if(confirm(`¿Estás seguro de eliminar la proyección ${idBorrar}?`)) {
+                            await eliminarProyeccionBackend(idBorrar);
+                        }
+                    }
+                } else {
+                    // Lógica de carga
+                    const encontrado = lista.find(p => p.id === seleccion.trim());
+                    if (encontrado) {
+                        renderProjection(container, encontrado.projection, options);
+                        onSimChange(encontrado.projection);
+                    } else {
+                        alert("ID no encontrado");
+                    }
+                }
+            }
+        } catch (e) { console.error(e); alert("Error al cargar proyecciones"); }
     });
     
     const btnReset = createButton('Resetear', 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50', () => {
@@ -448,22 +545,16 @@ async function guardarProyeccionEnBackend(proj, rut, codigo, name) {
     } catch (e) { console.error(e); alert("Error de conexión"); }
 }
 
-async function cargarProyeccionDeBackend(rut, codigo, onSuccess) {
+async function eliminarProyeccionBackend(id) {
     try {
-        const resp = await fetch(`${API_BASE_URL}/proyeccion?codigo=${codigo}`, { credentials: 'include' });
-        if (resp.ok) {
-            const data = await resp.json();
-            if (data.proyecciones && data.proyecciones.length > 0) {
-                // Cargar la última
-                const latest = data.proyecciones[data.proyecciones.length - 1];
-                onSuccess(latest.projection);
-                alert(`Cargada proyección: ${latest.name}`);
-            } else {
-                alert("No hay proyecciones guardadas.");
-            }
+        const resp = await fetch(`${API_BASE_URL}/proyeccion/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        if (resp.ok) alert("Proyección eliminada.");
+        else {
+            const err = await resp.json();
+            alert("Error al eliminar: " + (err.error || "Desconocido"));
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); alert("Error de conexión"); }
 }
-
-// Función stub para tests
-export function simulateFailures(projection) { return projection; }

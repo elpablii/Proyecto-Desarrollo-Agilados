@@ -88,7 +88,7 @@ describe('mallaClient', () => {
       const data = await fetchAvance(rut, codigoCarrera);
 
       // Verificamos que authenticatedFetch fue llamado con la URL correcta
-      const expectedUrl = `${API_BASE_URL}/avance/${rut}/${codigoCarrera}`;
+      const expectedUrl = `${API_BASE_URL}/data/avance/${rut}/${codigoCarrera}`;
       expect(authClient.authenticatedFetch).toHaveBeenCalledWith(expectedUrl, { method: 'GET' });
       // Verificamos que los datos retornados son la propiedad .avance
       expect(data).toEqual(mockAvanceResponse.avance);

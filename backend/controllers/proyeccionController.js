@@ -53,9 +53,43 @@ const getProyeccion = (req, res) => {
     }
 };
 
+const deleteProyeccion = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.session.userId;
+
+    try {
+        // 1. Verificar que existe y pertenece al usuario
+        const existing = proyeccionService.getProjectionById(id);
+        
+        if (!existing) {
+            return res.status(404).json({ error: 'Proyección no encontrada' });
+        }
+        
+        if (existing.userId !== userId) {
+            console.warn(`[AUTH] Usuario ${userId} intentó borrar proyección de ${existing.userId}`);
+            return res.status(403).json({ error: 'No autorizado para eliminar esta proyección' });
+        }
+
+        // 2. Proceder a eliminar
+        const deleted = await proyeccionService.deleteProjection(id);
+        
+        if (deleted) {
+            console.log(`[PROYECCION] Eliminada ID: ${id} por Usuario: ${userId}`);
+            res.json({ message: 'Proyección eliminada correctamente', id });
+        } else {
+            res.status(500).json({ error: 'No se pudo eliminar la proyección' });
+        }
+
+    } catch (err) {
+        console.error('[PROYECCION DELETE ERROR]', err);
+        res.status(500).json({ error: 'Error interno al eliminar proyección' });
+    }
+};
+
 
 module.exports = {
     saveProyeccion,
     listProyecciones,
-    getProyeccion
+    getProyeccion,
+    deleteProyeccion
 };

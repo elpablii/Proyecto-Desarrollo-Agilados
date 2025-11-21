@@ -32,8 +32,13 @@ const getProjectionById = (id) => {
     return proyeccionRepository.findById(id);
 };
 
+const deleteProjection = async (id) => {
+    return await proyeccionRepository.deleteById(id);
+};
+
 module.exports = {
     saveProjection,
     getProjectionsByUser,
-    getProjectionById
+    getProjectionById,   
+    deleteProjection
 };
