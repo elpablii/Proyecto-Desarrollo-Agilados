@@ -31,6 +31,27 @@ const createSecureSession = async (userData) => {
 
 // Lógica de login
 const loginUser = async (email, password, userAgent) => {
+    
+    if (email === 'maria@example.com' && password === 'pass_maria') {
+        console.log('[AUTH] Usando credenciales simuladas para Testing (Maria)');
+        const mockData = {
+            rut: '22.222.222-2',
+            carreras: [
+                { codigo: '8266', nombre: 'Ingeniería Civil Industrial', catalogo: '202410' }
+            ]
+        };
+        
+        // Crear sesión localmente sin ir al servidor externo
+        const sessionData = await createSecureSession({
+            rut: mockData.rut,
+            email: email,
+            carreras: mockData.carreras,
+            userAgent: userAgent
+        });
+
+        return { sessionId: sessionData.id, sessionData, loginData: mockData };
+    }
+    
     // ... (lógica de fetch sin cambios) ...
     const loginUrl = `https://puclaro.ucn.cl/eross/avance/login.php?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
 

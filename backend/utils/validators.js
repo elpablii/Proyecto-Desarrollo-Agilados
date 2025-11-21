@@ -66,7 +66,7 @@ const saveProyeccionRules = () => [
         .escape(), // ¡Sanitización clave para prevenir XSS!
     body('projection', 'La proyección es requerida y debe ser un array')
         .notEmpty()
-        .isArray()
+        .isObject()
 ];
 
 /**

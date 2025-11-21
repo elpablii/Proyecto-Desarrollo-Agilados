@@ -81,5 +81,90 @@
     "lastActivity": 1763761627052,
     "expiresAt": 1763847667157,
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "1f3c9563a3572b71a47f2d80038cc6f9c60ff00f8319e070cedefce566fd6192",
+    "token": "b30460592d273e651d4339323d22082e952d0241dff85f199ef347efb18760dc",
+    "userId": "22.222.222-2",
+    "email": "maria@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "Ingeniería Civil Industrial",
+        "catalogo": "202410"
+      }
+    ],
+    "createdAt": 1763762194627,
+    "lastActivity": 1763762194934,
+    "expiresAt": 1763848594627,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.37 Safari/537.36"
+  },
+  {
+    "id": "179583eb7d1ff9308222dfbbc6943d9d957a05a0cd72ccd0872daec504423c73",
+    "token": "acd21ad30f728980925a55d012931d196e929b0060a2a0a52aef712a2f4e529f",
+    "userId": "22.222.222-2",
+    "email": "maria@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "Ingeniería Civil Industrial",
+        "catalogo": "202410"
+      }
+    ],
+    "createdAt": 1763762590140,
+    "lastActivity": 1763762590390,
+    "expiresAt": 1763848990140,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.37 Safari/537.36"
+  },
+  {
+    "id": "fa6eaae2ba240ea53e4834640430b3fbc70bcdb6efe20eb1cfb3c1e8be27a126",
+    "token": "e0ed3afd93e3702e2336b0a131d6232aab6f100bf786c27d8d9fcf0ec76a0aab",
+    "userId": "22.222.222-2",
+    "email": "maria@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "Ingeniería Civil Industrial",
+        "catalogo": "202410"
+      }
+    ],
+    "createdAt": 1763762772476,
+    "lastActivity": 1763762776252,
+    "expiresAt": 1763849172476,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.37 Safari/537.36"
+  },
+  {
+    "id": "b0e3f063d409006dc297d3d72bb7c68194d19c2850b4896c3e2129d1173f8dc4",
+    "token": "f2b72be59e63566779e8f8aa9287c561c5c57be046d46ff0e0944ae10019187a",
+    "userId": "22.222.222-2",
+    "email": "maria@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "Ingeniería Civil Industrial",
+        "catalogo": "202410"
+      }
+    ],
+    "createdAt": 1763763121009,
+    "lastActivity": 1763763123026,
+    "expiresAt": 1763849521009,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.37 Safari/537.36"
+  },
+  {
+    "id": "16915c348430675c2d490b03a28358dbf4edfbc3cb4bf54a2540aa9b458ce4de",
+    "token": "bbe7161515157ea4b4ddb99b16cba5a6ecb7e141e0c060934108111da43ef84f",
+    "userId": "22.222.222-2",
+    "email": "maria@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "Ingeniería Civil Industrial",
+        "catalogo": "202410"
+      }
+    ],
+    "createdAt": 1763763419248,
+    "lastActivity": 1763763421786,
+    "expiresAt": 1763849819248,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.37 Safari/537.36"
   }
 ]
