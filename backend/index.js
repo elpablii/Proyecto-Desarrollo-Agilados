@@ -2,6 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet'); // [NUEVO] Security headers
 const path = require('path');
 
 // [NUEVO] Cargar variables de entorno desde .env (para desarrollo local)
@@ -23,6 +24,7 @@ const apiRoutes = require('./routes');
 const app = express();
 
 // --- Middleware setup ---
+app.use(helmet()); // [NUEVO] Security headers
 app.use(express.json()); // Parse JSON bodies
 app.use(cors({
     origin: [ // Allow requests from these frontend origins
