@@ -1,5 +1,8 @@
 // Servicio para manejar la lógica de proxy a APIs externas
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+// [MODIFICADO] Usar fetch nativo (Node 18+)
+// [MODIFICADO] Usar fetch nativo (Node 18+)
+// fetch ya es global, no necesitamos asignarlo
+
 const axios = require('axios');
 const { getLocalMallaFallback } = require('../utils/helpers');
 
@@ -23,7 +26,7 @@ const fetchMalla = async (codigo, catalogo) => {
     try {
         console.log(`[MALLA DEBUG] URL: ${targetUrl}`);
         console.log(`[MALLA DEBUG] Token: ${hawaiiAuthToken}`);
-        
+
         // Usar axios que maneja mejor los headers custom
         const response = await axios.get(targetUrl, {
             headers: {
@@ -31,7 +34,7 @@ const fetchMalla = async (codigo, catalogo) => {
             }
         });
         console.log(`[MALLA] Respuesta recibida del servicio externo - Status: ${response.status}`);
-        
+
         // Con axios, response.data ya contiene el JSON parseado
         const body = response.data;
         const returned = Array.isArray(body) ? body : (body.malla || body);
@@ -43,18 +46,18 @@ const fetchMalla = async (codigo, catalogo) => {
             const status = err.response.status;
             const errorData = err.response.data;
             console.log(`[MALLA ERROR] Status ${status}:`, errorData);
-            
+
             // Try fallback for any error status (401, 403, 502, etc.)
             const fb = getLocalMallaFallback(mallaId);
             if (fb) {
                 console.log(`[MALLA FALLBACK] Returning local fallback due to error ${status}: ${fb.path}`);
                 return { data: fb.malla, meta: { source: fb.source, fetchedAt: new Date().toISOString() } };
             }
-            
+
             const errorDetail = errorData?.error || errorData?.message || `Status ${status}`;
             throw Object.assign(new Error('Error al obtener malla desde servicio externo'), { status: 502, detalle: errorDetail });
         }
-        
+
         console.error(`[MALLA ERROR] Exception fetching ${mallaId}:`, err.message);
         const fb = getLocalMallaFallback(mallaId);
         if (fb) {
@@ -84,7 +87,7 @@ const fetchAvance = async (rut, codigoCarrera) => {
                         throw Object.assign(new Error(errorDetail), { status: 404 });
                     }
                 }
-            } catch (e) { if(e.status === 404) throw e; /* ign */ }
+            } catch (e) { if (e.status === 404) throw e; /* ign */ }
             throw Object.assign(new Error(`Error al obtener datos del avance (${response.status})`), { status: response.status, detalle: errorDetail });
         }
 

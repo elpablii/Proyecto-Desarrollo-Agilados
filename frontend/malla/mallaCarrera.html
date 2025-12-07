@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,85 +8,145 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* --- Estilos Base Malla --- */
-    #malla-grid {
-        display: flex;
-        flex-direction: row;
-        overflow-x: auto;
-        padding: 16px;
-        gap: 12px;
-        background-color: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        min-height: 450px;
-        scroll-snap-type: x mandatory;
-    }
-    .malla-nivel {
-        flex: 0 0 260px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        padding: 12px;
-        background-color: #ffffff;
-        border-radius: 8px;
-        border: 1px solid #d1d5db;
-        transition: all 0.2s ease;
-        scroll-snap-align: start;
-    }
-    .malla-nivel-header {
-        font-weight: 700;
-        text-align: center;
-        padding-bottom: 8px;
-        border-bottom: 2px solid #e5e7eb;
-        color: #374151;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .asignatura-card {
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        padding: 10px;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        transition: transform 0.1s, box-shadow 0.1s;
-        cursor: grab;
-        background-color: #fff;
-        user-select: none;
-    }
-    .asignatura-card:active { cursor: grabbing; transform: scale(1.02); }
-    
-    /* Colores de Estado de Asignatura */
-    .asignatura-pendiente { background-color: #f3f4f6; border-left: 4px solid #9ca3af; }
-    .asignatura-aprobada { background-color: #dcfce7; border-left: 4px solid #22c55e; opacity: 0.7; }
-    .asignatura-reprobada { background-color: #fee2e2; border-left: 4px solid #ef4444; }
-    .asignatura-cursando { background-color: #dbeafe; border-left: 4px solid #3b82f6; }
+        #malla-grid {
+            display: flex;
+            flex-direction: row;
+            overflow-x: auto;
+            padding: 16px;
+            gap: 12px;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            min-height: 450px;
+            scroll-snap-type: x mandatory;
+        }
 
-    /* --- NUEVO: Feedback Visual Drag & Drop --- */
-    /* Cuando arrastras un ramo sobre un semestre válido */
-    .drop-valid {
-        background-color: #f0fdf4 !important; /* Verde muy claro */
-        border-color: #22c55e !important;
-        box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
-    }
-    /* Cuando arrastras un ramo sobre un semestre inválido (no cumple prerequisitos) */
-    .drop-invalid {
-        background-color: #fef2f2 !important; /* Rojo muy claro */
-        border-color: #ef4444 !important;
-        opacity: 0.6;
-    }
-    .drop-zone-active {
-        min-height: 60px;
-        background-color: rgba(0,0,0,0.02);
-        border-radius: 4px;
-        border: 2px dashed #cbd5e1;
-    }
+        .malla-nivel {
+            flex: 0 0 260px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            transition: all 0.2s ease;
+            scroll-snap-align: start;
+        }
+
+        .malla-nivel-header {
+            font-weight: 700;
+            text-align: center;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+            color: #374151;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .asignatura-card {
+            position: relative;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: transform 0.1s, box-shadow 0.1s;
+            cursor: grab;
+            background-color: #fff;
+            user-select: none;
+        }
+
+        .asignatura-card:active {
+            cursor: grabbing;
+            transform: scale(1.02);
+        }
+
+        /* Colores de Estado de Asignatura */
+        .asignatura-pendiente {
+            background-color: #f3f4f6;
+            border-left: 4px solid #9ca3af;
+        }
+
+        .asignatura-aprobada {
+            background-color: #dcfce7;
+            border-left: 4px solid #22c55e;
+            opacity: 0.7;
+        }
+
+        .asignatura-reprobada {
+            background-color: #fee2e2;
+            border-left: 4px solid #ef4444;
+        }
+
+        .asignatura-cursando {
+            background-color: #dbeafe;
+            border-left: 4px solid #3b82f6;
+        }
+
+        /* --- NUEVO: Feedback Visual Drag & Drop --- */
+        /* Cuando arrastras un ramo sobre un semestre válido */
+        .drop-valid {
+            background-color: #f0fdf4 !important;
+            /* Verde muy claro */
+            border-color: #22c55e !important;
+            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+        }
+
+        /* Cuando arrastras un ramo sobre un semestre inválido (no cumple prerequisitos) */
+        .drop-invalid {
+            background-color: #fef2f2 !important;
+            /* Rojo muy claro */
+            border-color: #ef4444 !important;
+            opacity: 0.6;
+        }
+
+        .drop-zone-active {
+            min-height: 60px;
+            background-color: rgba(0, 0, 0, 0.02);
+            border-radius: 4px;
+            border: 2px dashed #cbd5e1;
+        }
+
+        /* --- Badge de Intentos --- */
+        .asignatura-intentos {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #3b82f6;
+            /* Azul por defecto */
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+            border: 2px solid white;
+        }
+
+        .intentos-warning {
+            background-color: #f59e0b;
+        }
+
+        /* 2 intentos */
+        .intentos-danger {
+            background-color: #ef4444;
+        }
+
+        /* 3+ intentos */
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen"> 
+
+<body class="bg-gray-50 min-h-screen">
     <!-- Cabecera (Reutilizada de carrerasUsuario.html) -->
     <header class="grid bg-blue-500 w-full grid-flow-col pb-3 justify-between" id="cabezon">
         <div>
-            <img src="/Escudo-UCN-Full-Color.png" alt="Escudo-UCN-Full-Color"
-            class="w-10 h-10 mt-2 ml-2">
+            <img src="/Escudo-UCN-Full-Color.png" alt="Escudo-UCN-Full-Color" class="w-10 h-10 mt-2 ml-2">
         </div>
         <div id="saludo-usuario">
             <!-- El saludo se carga por manejoDatos.js -->
@@ -100,7 +161,8 @@
         <div class="mb-8">
             <h1 id="malla-header" class="text-3xl font-bold text-gray-800 mb-2">Malla Curricular</h1>
             <p class="text-gray-600">Visualización de tu avance académico por nivel.</p>
-             <a href="../carreras/carrerasUsuario.html" class="text-blue-600 hover:text-blue-800">&larr; Volver a Mis Carreras</a>
+            <a href="../carreras/carrerasUsuario.html" class="text-blue-600 hover:text-blue-800">&larr; Volver a Mis
+                Carreras</a>
         </div>
 
         <!-- Estado de Carga -->
@@ -113,14 +175,14 @@
         <div id="error-state" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
             <strong>Error:</strong> <span id="error-message"></span>
         </div>
-        
+
         <!-- Contenedor para la Malla -->
         <div id="malla-grid-container" class="hidden">
             <div id="malla-grid">
                 <!-- Las columnas y asignaturas se generarán aquí dinámicamente -->
             </div>
         </div>
-        
+
         <!-- Contenedor para la Proyección (semestres) -->
         <div id="proyeccion-container" class="hidden mt-8">
             <h2 class="text-2xl font-semibold mb-3">Proyección sugerida (por semestres)</h2>
@@ -133,4 +195,5 @@
     <script type="module" src="../manejoDatos.js"></script>
     <script type="module" src="mallaCarrera.js"></script>
 </body>
+
 </html>

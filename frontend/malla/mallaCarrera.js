@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '/login.html';
         return;
     }
-    
+
     // 2. Obtener parámetros de la URL
     const params = new URLSearchParams(window.location.search);
     const rut = params.get('rut');
@@ -51,14 +51,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             fetchMalla(codigoCarrera, catalogo),
             fetchAvance(rut, codigoCarrera)
         ]);
-        
+
         // 4. Renderizar Malla Principal
         mostrarCarga(false);
         renderMalla(mallaData, avanceData);
 
         // 5. Proyección Interactiva (Modelo Predictivo)
         const projContainer = document.getElementById('proyeccion-container');
-        
+
         try {
             // Intentar cargar la última guardada o generar una nueva por defecto
             let projection = null;
@@ -79,9 +79,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Generar nueva si no existe guardada
             if (!projection) {
-                projection = computeProjection(mallaData, avanceData, { 
-                    maxCreditsPerSemester: 30, 
-                    includeInProgressAsCompleted: false 
+                projection = computeProjection(mallaData, avanceData, {
+                    maxCreditsPerSemester: 30,
+                    includeInProgressAsCompleted: false
                 });
                 console.log('[Proyección] Generada por defecto (Algoritmo Predictivo).');
             }
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Renderizar Panel de Proyección
             if (projection && projection.semesters && projContainer) {
                 projContainer.style.display = 'block';
-                
+
                 renderProjection(projContainer, projection, {
                     maxCreditsPerSemester: 30,
                     rut,
@@ -134,39 +134,58 @@ function renderMalla(malla, avance) {
     const reprobados = new Set(avance.filter(a => a.status === 'REPROBADO').map(a => a.course));
     const cursando = new Set(avance.filter(a => ['CURSANDO', 'INSCRITO'].includes(a.status)).map(a => a.course));
 
+    // [NUEVO] Contar intentos por asignatura
+    const intentosMap = new Map();
+    avance.forEach(record => {
+        if (record.course) {
+            const count = intentosMap.get(record.course) || 0;
+            intentosMap.set(record.course, count + 1);
+        }
+    });
+
     const maxNivel = Math.max(...malla.map(a => a.nivel || 0));
     const nivelesMap = new Map();
     for (let i = 1; i <= maxNivel; i++) nivelesMap.set(i, []);
-    
+
     malla.forEach(asignatura => {
         if (nivelesMap.has(asignatura.nivel)) nivelesMap.get(asignatura.nivel).push(asignatura);
     });
 
-    mallaGrid.innerHTML = ''; 
-    mallaGridContainer.style.display = 'block'; 
+    mallaGrid.innerHTML = '';
+    mallaGridContainer.style.display = 'block';
 
     for (let i = 1; i <= maxNivel; i++) {
         const nivelContainer = document.createElement('div');
         nivelContainer.className = 'malla-nivel';
-        
+
         const nivelHeader = document.createElement('div');
         nivelHeader.className = 'malla-nivel-header';
         nivelHeader.textContent = `Nivel ${i}`;
         nivelContainer.appendChild(nivelHeader);
 
         const asignaturasNivel = nivelesMap.get(i) || [];
-        
+
         asignaturasNivel.forEach(asignatura => {
             const card = document.createElement('div');
             card.className = 'asignatura-card';
-            
-            let estadoClass = 'asignatura-pendiente'; 
+
+            let estadoClass = 'asignatura-pendiente';
             if (aprobados.has(asignatura.codigo)) estadoClass = 'asignatura-aprobada';
             else if (reprobados.has(asignatura.codigo)) estadoClass = 'asignatura-reprobada';
             else if (cursando.has(asignatura.codigo)) estadoClass = 'asignatura-cursando';
-            
+
             card.classList.add(estadoClass);
             card.dataset.codigo = asignatura.codigo;
+
+            // [NUEVO] Badge de Intentos
+            let intentosBadge = '';
+            const intentos = intentosMap.get(asignatura.codigo) || 0;
+            if (intentos > 0) {
+                let badgeClass = 'asignatura-intentos';
+                if (intentos === 2) badgeClass += ' intentos-warning';
+                if (intentos >= 3) badgeClass += ' intentos-danger';
+                intentosBadge = `<div class="${badgeClass}" title="${intentos}ª oportunidad">${intentos}</div>`;
+            }
 
             // 2. Generar el texto del tooltip con Nombres
             let tooltipText = "";
@@ -181,14 +200,15 @@ function renderMalla(malla, avance) {
             }
 
             card.innerHTML = `
+                ${intentosBadge}
                 <div class="asignatura-nombre" title="${asignatura.asignatura}">${asignatura.asignatura}</div>
                 <div class="asignatura-codigo">${asignatura.codigo}</div>
                 <div class="asignatura-creditos">Créditos: ${asignatura.creditos}</div>
-                ${asignatura.prereq ? 
-                    `<div class="asignatura-prereq" title="${tooltipText}">Req: ${asignatura.prereq.split(',').length}</div>` 
+                ${asignatura.prereq ?
+                    `<div class="asignatura-prereq" title="${tooltipText}">Req: ${asignatura.prereq.split(',').length}</div>`
                     : ''}
             `;
-            
+
             nivelContainer.appendChild(card);
         });
         mallaGrid.appendChild(nivelContainer);
@@ -223,7 +243,7 @@ function highlightDelayedCourses(projection) {
     // 2. Recorrer la proyección para ver cuándo se toma cada ramo
     projection.semesters.forEach((sem, index) => {
         const semestreNumero = index + 1;
-        
+
         sem.courses.forEach(curso => {
             // Buscar la tarjeta en la malla principal
             const card = document.querySelector(`.asignatura-card[data-codigo="${curso.codigo}"]`);
@@ -231,9 +251,9 @@ function highlightDelayedCourses(projection) {
                 // Lógica de ejemplo: Si el ramo se toma después del semestre 5, marcarlo
                 // O podrías comparar contra el "nivel" ideal del ramo.
                 if (semestreNumero > curso.nivel) {
-                     // Ramo atrasado visualmente
-                     card.classList.add('border-orange-500', 'border-2');
-                     card.title = `Proyectado para semestre ${semestreNumero} (Atrasado)`;
+                    // Ramo atrasado visualmente
+                    card.classList.add('border-orange-500', 'border-2');
+                    card.title = `Proyectado para semestre ${semestreNumero} (Atrasado)`;
                 }
             }
         });
