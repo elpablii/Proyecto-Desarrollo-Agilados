@@ -42,5 +42,27 @@
     "lastActivity": 1765134423435,
     "expiresAt": 1765220818831,
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  },
+  {
+    "id": "89390ca98297eea12795be917a45b7dfc644ca16b2ad0da9a962c05591fdc7b2",
+    "token": "8350b4f524c7fa54f051c1932801d81e2d256e57ee54522423a35a868b736d79",
+    "userId": "333333333",
+    "email": "ximena@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "ITI",
+        "catalogo": "202410"
+      },
+      {
+        "codigo": "8616",
+        "nombre": "ICI",
+        "catalogo": "202310"
+      }
+    ],
+    "createdAt": 1765140785544,
+    "lastActivity": 1765140792128,
+    "expiresAt": 1765227185544,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
   }
 ]
