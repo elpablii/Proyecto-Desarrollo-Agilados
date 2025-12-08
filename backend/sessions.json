@@ -1,29 +1,24 @@
 [
   {
-    "id": "858f219364d90a1f2234a0ca6ea311e4153b268847e638d0f0616681567f8710",
-    "token": "72cb27ff21403480d606f048028c2bbcea8c6950f38ed380bba324a4bb9683c3",
-    "userId": "333333333",
-    "email": "ximena@example.com",
+    "id": "8c6863342454f0f2c7a3c8c37d6e543cb87144c193e9bfe7def9e22ca9245d42",
+    "token": "12594669cbf9df4d14bd0cebe1d08fe4655b8bc9f82c897caa1515a67cac780b",
+    "userId": "222222222",
+    "email": "maria@example.com",
     "carreras": [
       {
         "codigo": "8266",
         "nombre": "ITI",
         "catalogo": "202410"
-      },
-      {
-        "codigo": "8616",
-        "nombre": "ICI",
-        "catalogo": "202310"
       }
     ],
-    "createdAt": 1765134117934,
-    "lastActivity": 1765134124347,
-    "expiresAt": 1765220517934,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+    "createdAt": 1765216619762,
+    "lastActivity": 1765225100690,
+    "expiresAt": 1765303019762,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 OPR/124.0.0.0"
   },
   {
-    "id": "d4463299360aaedba3692fcfbba3340d04da616a85d6043cff0df725ac278c5e",
-    "token": "4982431f858f122cc83238f9bceef86772dabdc3d5182cedc4df930cc3490866",
+    "id": "d1790d22f2ac97ba81b3427f7db24113a67702810431a0cc38e017c176f16dc4",
+    "token": "dd3157324a31ce22c7e0893b8f4d7816ebe3e5dab2db30b6b9a8303d045d1419",
     "userId": "333333333",
     "email": "ximena@example.com",
     "carreras": [
@@ -38,53 +33,9 @@
         "catalogo": "202310"
       }
     ],
-    "createdAt": 1765134418831,
-    "lastActivity": 1765134423435,
-    "expiresAt": 1765220818831,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
-  },
-  {
-    "id": "89390ca98297eea12795be917a45b7dfc644ca16b2ad0da9a962c05591fdc7b2",
-    "token": "8350b4f524c7fa54f051c1932801d81e2d256e57ee54522423a35a868b736d79",
-    "userId": "333333333",
-    "email": "ximena@example.com",
-    "carreras": [
-      {
-        "codigo": "8266",
-        "nombre": "ITI",
-        "catalogo": "202410"
-      },
-      {
-        "codigo": "8616",
-        "nombre": "ICI",
-        "catalogo": "202310"
-      }
-    ],
-    "createdAt": 1765140785544,
-    "lastActivity": 1765140792128,
-    "expiresAt": 1765227185544,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
-  },
-  {
-    "id": "aa5f89c70b9f38d0256b5f4425353f0b8950d9aa5c1f3b632a0c9e4713c46e08",
-    "token": "d80b52016d51584ca1b856f500c7fa64f6bea879413feb4c5642c9305e1a2a42",
-    "userId": "333333333",
-    "email": "ximena@example.com",
-    "carreras": [
-      {
-        "codigo": "8266",
-        "nombre": "ITI",
-        "catalogo": "202410"
-      },
-      {
-        "codigo": "8616",
-        "nombre": "ICI",
-        "catalogo": "202310"
-      }
-    ],
-    "createdAt": 1765141697823,
-    "lastActivity": 1765141707311,
-    "expiresAt": 1765228097823,
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+    "createdAt": 1765225267883,
+    "lastActivity": 1765231452952,
+    "expiresAt": 1765311667883,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 OPR/124.0.0.0"
   }
 ]
