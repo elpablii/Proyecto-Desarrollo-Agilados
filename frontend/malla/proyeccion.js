@@ -59,6 +59,87 @@ export function detectarAlertaAcademica(avance) {
 }
 
 /**
+ * Detecta ciclos en el grafo de prerrequisitos usando DFS con colores.
+ * @param {Map} mallaByCode - Mapa de cursos por código
+ * @returns {Object} - { hasCycle: boolean, cycleNodes: Array }
+ */
+function detectarCiclos(mallaByCode) {
+    const WHITE = 0; // No visitado
+    const GRAY = 1;  // En proceso (en el stack actual)
+    const BLACK = 2; // Completamente procesado
+    
+    const color = new Map();
+    const cycleNodes = [];
+    let hasCycle = false;
+    
+    // Inicializar todos como no visitados
+    for (const code of mallaByCode.keys()) {
+        color.set(code, WHITE);
+    }
+    
+    function dfs(code, path = []) {
+        if (hasCycle) return; // Ya encontramos un ciclo, salir
+        
+        const curso = mallaByCode.get(code);
+        if (!curso) return; // Prerrequisito no existe en la malla
+        
+        color.set(code, GRAY);
+        path.push(code);
+        
+        const prereqs = curso.prereqList || [];
+        for (const prereq of prereqs) {
+            if (!mallaByCode.has(prereq)) continue; // Prerrequisito externo, ignorar
+            
+            if (color.get(prereq) === GRAY) {
+                // ¡Ciclo detectado!
+                hasCycle = true;
+                // Extraer los nodos del ciclo
+                const cycleStart = path.indexOf(prereq);
+                cycleNodes.push(...path.slice(cycleStart));
+                return;
+            }
+            
+            if (color.get(prereq) === WHITE) {
+                dfs(prereq, path);
+            }
+        }
+        
+        path.pop();
+        color.set(code, BLACK);
+    }
+    
+    // Ejecutar DFS desde cada nodo no visitado
+    for (const code of mallaByCode.keys()) {
+        if (color.get(code) === WHITE) {
+            dfs(code, []);
+            if (hasCycle) break;
+        }
+    }
+    
+    return { hasCycle, cycleNodes };
+}
+
+/**
+ * Valida que todos los prerrequisitos existan en la malla.
+ * @param {Map} mallaByCode - Mapa de cursos por código
+ * @returns {Array} - Lista de prerrequisitos faltantes { curso, prereqFaltante }
+ */
+function validarPrerrequisitosFaltantes(mallaByCode) {
+    const faltantes = [];
+    
+    for (const [codigo, curso] of mallaByCode.entries()) {
+        const prereqs = curso.prereqList || [];
+        for (const prereq of prereqs) {
+            if (prereq && !mallaByCode.has(prereq)) {
+                faltantes.push({ curso: codigo, prereqFaltante: prereq });
+            }
+        }
+    }
+    
+    return faltantes;
+}
+
+/**
  * Calcula la profundidad de la cadena de dependencias (Critical Path).
  * @param {string} codigo - Código del curso
  * @param {Map} grafo - Mapa de dependencias inversas (quién desbloquea a quién)
@@ -134,26 +215,54 @@ export function computeProjection(malla, avance, options = {}) {
     const fixedCourses = options.fixedCourses || new Map(); // Map<codigo, semesterIndex>
     const preserveStructure = !!options.preserveStructure; // [NUEVO] Flag para mantener estructura
 
-    if (!Array.isArray(malla)) return { semesters: [], warnings: ['Malla inválida o vacía'] };
+    if (!Array.isArray(malla)) return { semesters: [], warnings: ['Malla inválida o vacía'], error: 'Malla inválida' };
 
     // 1. Detección de Alerta
     const enAlerta = detectarAlertaAcademica(avance);
     const warnings = [];
+    
+    // 1.1 Construcción temprana de mallaByCode para validaciones
+    const mallaByCodeTemp = new Map();
+    for (const a of malla) {
+        mallaByCodeTemp.set(a.codigo, { 
+            ...a, 
+            prereqList: (a.prereq || '').split(',').map(s => s.trim()).filter(Boolean) 
+        });
+    }
+    
+    // 1.2 Detección de Ciclos en Prerrequisitos
+    const cicloCheck = detectarCiclos(mallaByCodeTemp);
+    if (cicloCheck.hasCycle) {
+        const cicloStr = cicloCheck.cycleNodes.join(' -> ');
+        return { 
+            semesters: [], 
+            warnings: [`Ciclo detectado en prerrequisitos: ${cicloStr}`], 
+            error: `Ciclo en prerrequisitos: ${cicloStr}`,
+            totalSemesters: 0,
+            studentStatus: 'ERROR',
+            maxCreditsAllowed: maxCredits,
+            estimatedGraduation: '--'
+        };
+    }
+    
+    // 1.3 Validar prerrequisitos que no existen en la malla
+    const prereqsFaltantes = validarPrerrequisitosFaltantes(mallaByCodeTemp);
+    if (prereqsFaltantes.length > 0) {
+        prereqsFaltantes.forEach(f => {
+            warnings.push(`Prerrequisito '${f.prereqFaltante}' del curso '${f.curso}' no existe en la malla.`);
+        });
+    }
     
     if (enAlerta) {
         maxCredits = 15; // Regla de negocio
         warnings.push('ALERTA ACADÉMICA DETECTADA: Carga máxima reducida a 15 créditos.');
     }
 
-    // 2. Construcción de Grafos
-    const mallaByCode = new Map();
+    // 2. Construcción de Grafos (usar mapa ya construido)
+    const mallaByCode = mallaByCodeTemp;
     const dependenciasInversas = new Map(); 
 
     for (const a of malla) {
-        mallaByCode.set(a.codigo, { 
-            ...a, 
-            prereqList: (a.prereq || '').split(',').map(s => s.trim()).filter(Boolean) 
-        });
         if(!dependenciasInversas.has(a.codigo)) dependenciasInversas.set(a.codigo, new Set());
     }
 
@@ -187,8 +296,9 @@ export function computeProjection(malla, avance, options = {}) {
     
     // [NUEVO] Agregar los reprobados al remaining para que se programen como retake
     // (ya están en remaining si no están aprobados, pero nos aseguramos)
+    // [FIX] Solo agregar si el curso existe en la malla
     reprobados.forEach(code => {
-        if (!completed.has(code)) {
+        if (!completed.has(code) && mallaByCode.has(code)) {
             remaining.add(code);
         }
     });
@@ -200,9 +310,14 @@ export function computeProjection(malla, avance, options = {}) {
     const projectedPassed = new Set(completed);
 
     function prereqsSatisfied(code) {
-        const pList = mallaByCode.get(code).prereqList || [];
+        const curso = mallaByCode.get(code);
+        if (!curso) return false; // Curso no existe en la malla
+        
+        const pList = curso.prereqList || [];
         for (const p of pList) {
             if (projectedPassed.has(p)) continue;
+            // Si el prerrequisito no existe en la malla, lo consideramos satisfecho (externo)
+            if (!mallaByCode.has(p)) continue;
             // Nota: 'scheduled' ya no es suficiente, necesitamos saber si se aprobó en un semestre ANTERIOR.
             // En el algoritmo greedy, procesamos semestre a semestre, así que si está en projectedPassed, está ok.
             return false;
@@ -291,6 +406,9 @@ export function computeProjection(malla, avance, options = {}) {
 
     // 4. Loop de Programación (Algoritmo Greedy Original - Modo Recálculo)
     let currentSemIndex = 0;
+    // [OPTIMIZACIÓN] Memoización global para calcular profundidades (fuera del loop)
+    const memoProfundidadGlobal = new Map();
+    
     // Safety break to prevent infinite loops
     while (remaining.size > 0 && currentSemIndex < 20) {
         const semester = { courses: [], credits: 0 };
@@ -340,8 +458,7 @@ export function computeProjection(malla, avance, options = {}) {
             }
         }
 
-        // [NUEVO] Memoización para profundidad
-        const memoProfundidad = new Map();
+        // [OPTIMIZACIÓN] Usar memoización global en lugar de crear nueva cada iteración
         let eligible = []; // [FIX] Definir fuera del if para evitar crash en deadlock check
 
         // B. Llenar con cursos elegibles (no forzados a otros semestres)
@@ -369,7 +486,7 @@ export function computeProjection(malla, avance, options = {}) {
 
                 if (prereqsSatisfied(code)) {
                     const asignatura = mallaByCode.get(code);
-                    const score = calcularPrioridad(asignatura, dependenciasInversas, memoProfundidad);
+                    const score = calcularPrioridad(asignatura, dependenciasInversas, memoProfundidadGlobal);
                     eligible.push({ ...asignatura, score });
                 }
             }
@@ -385,6 +502,22 @@ export function computeProjection(malla, avance, options = {}) {
                 if (scheduled.has(course.codigo) && !isReprobadoRetake) continue;
                 
                 const c = course.creditos || 0;
+                
+                // [FIX] Manejar cursos "oversized" (créditos > máximo permitido)
+                if (c > currentMaxCredits) {
+                    // El curso es más grande que el límite permitido
+                    // Lo agregamos solo si el semestre está vacío
+                    if (semester.courses.length === 0) {
+                        warnings.push(`Curso ${course.codigo} (${c} cr) excede el límite de ${currentMaxCredits} créditos. Se asigna solo en su semestre.`);
+                        const isRetake = reprobados.has(course.codigo);
+                        semester.courses.push({ ...course, prereqSatisfied: true, isRetake: isRetake, oversized: true });
+                        semester.credits += c;
+                        scheduled.add(course.codigo);
+                        remaining.delete(course.codigo);
+                    }
+                    // Si el semestre ya tiene cursos, este curso irá a otro semestre
+                    continue;
+                }
                 
                 if (semester.credits + c <= currentMaxCredits) {
                     // [FIX] Marcar como retake si ya existe una instancia previa reprobada

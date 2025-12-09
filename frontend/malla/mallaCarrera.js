@@ -52,6 +52,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             fetchAvance(rut, codigoCarrera)
         ]);
 
+        // [DEBUG] Log para verificar datos cargados
+        console.log('=== DEBUG DATOS CARGADOS ===');
+        console.log('[DEBUG] mallaData:', mallaData?.length, 'ramos totales');
+        console.log('[DEBUG] mallaData completa:', mallaData);
+        console.log('[DEBUG] avanceData:', avanceData?.length, 'registros');
+        console.log('[DEBUG] avanceData completa:', avanceData);
+        console.log('[DEBUG] Códigos en malla:', mallaData?.map(m => m.codigo));
+        console.log('[DEBUG] Cursos en avance:', avanceData?.map(a => ({ course: a.course, status: a.status })));
+        console.log('=== FIN DEBUG ===');
+
         // 4. Renderizar Malla Principal
         mostrarCarga(false);
         renderMalla(mallaData, avanceData);
@@ -486,8 +496,9 @@ function renderMalla(malla, avance) {
         intentosPorCursoCalc[codigo]++;
         const numeroIntento = intentosPorCursoCalc[codigo];
 
-        // Regla General: Si tienes 3 o más intentos, es alerta (independiente del estado actual, el historial pesa)
-        if (numeroIntento >= 3) {
+        // Regla General: Si tienes 3 o más intentos, es alerta
+        // [FIX] Pero solo si el ramo NO está aprobado actualmente
+        if (numeroIntento >= 3 && !aprobados.has(codigo)) {
              dangerCourses.add(codigo);
         }
 
@@ -499,11 +510,17 @@ function renderMalla(malla, avance) {
         }
     }
     // Regla 1: Reprobar 2 asignaturas en 2da oportunidad en el mismo semestre
+    // [FIX] Solo marcar como peligrosos si NO están aprobados actualmente
     for (const [periodo, listaReprobados] of Object.entries(reprobacionesPorSemestre)) {
         const segundas = listaReprobados.filter(r => r.intento === 2);
         if (segundas.length >= 2) {
             console.log(`[Alerta] Semestre ${periodo} tiene ${segundas.length} reprobaciones en 2do intento`);
-            segundas.forEach(r => dangerCourses.add(r.codigo));
+            segundas.forEach(r => {
+                // Solo agregar si el ramo NO está aprobado
+                if (!aprobados.has(r.codigo)) {
+                    dangerCourses.add(r.codigo);
+                }
+            });
         }
     }
     
@@ -544,8 +561,9 @@ function renderMalla(malla, avance) {
             card.dataset.codigo = asignatura.codigo;
 
             // [NUEVO] Highlight de Alerta Académica
+            // [FIX] Solo aplicar alerta si el ramo NO está aprobado
             let alertIcon = '';
-            if (dangerCourses.has(asignatura.codigo)) {
+            if (dangerCourses.has(asignatura.codigo) && !aprobados.has(asignatura.codigo)) {
                 card.style.setProperty('border', '3px solid #ef4444', 'important'); // Red-500
                 card.style.setProperty('box-shadow', '0 0 10px rgba(239, 68, 68, 0.5)', 'important');
                 card.classList.add('animate-pulse'); 
@@ -559,16 +577,24 @@ function renderMalla(malla, avance) {
             let intentosBadge = '';
             const intentos = intentosMap.get(asignatura.codigo) || 0;
             if (intentos > 0) {
-                // Estilo base (azul)
-                let badgeStyle = 'background-color: #3b82f6; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; position: absolute; top: -5px; right: -5px; z-index: 15; border: 1px solid white;';
+                // [FIX] Si está aprobado, el badge es verde (éxito)
+                let badgeStyle = '';
                 
-                // Estilo Alerta (Rojo)
-                if (dangerCourses.has(asignatura.codigo) || intentos >= 3) {
+                if (aprobados.has(asignatura.codigo)) {
+                    // Estilo Éxito (Verde) - Ramo aprobado
+                    badgeStyle = 'background-color: #22c55e; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; position: absolute; top: -5px; right: -5px; z-index: 15; border: 1px solid white;';
+                }
+                // Estilo Alerta (Rojo) - Solo si NO está aprobado
+                else if (dangerCourses.has(asignatura.codigo) || intentos >= 3) {
                     badgeStyle = 'background-color: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; position: absolute; top: -8px; right: -8px; z-index: 20; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid white;';
                 } 
                 // Estilo Warning (Naranja)
                 else if (intentos === 2) {
                     badgeStyle = 'background-color: #f59e0b; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; position: absolute; top: -5px; right: -5px; z-index: 15; border: 1px solid white;';
+                }
+                // Estilo base (azul)
+                else {
+                    badgeStyle = 'background-color: #3b82f6; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; position: absolute; top: -5px; right: -5px; z-index: 15; border: 1px solid white;';
                 }
 
                 intentosBadge = `<div style="${badgeStyle}" title="${intentos}ª oportunidad">${intentos}</div>`;
