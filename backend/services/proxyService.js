@@ -4,7 +4,7 @@
 // fetch ya es global, no necesitamos asignarlo
 
 const axios = require('axios');
-const { getLocalMallaFallback } = require('../utils/helpers');
+const { getLocalMallaFallback, getLocalAvanceFallback } = require('../utils/helpers');
 
 // Obtiene la malla desde el servicio externo o fallback
 const fetchMalla = async (codigo, catalogo) => {
@@ -73,6 +73,16 @@ const fetchAvance = async (rut, codigoCarrera) => {
     const targetUrl = `https://puclaro.ucn.cl/eross/avance/avance.php?rut=${encodeURIComponent(rut)}&codcarrera=${encodeURIComponent(codigoCarrera)}`;
 
     console.log(`[AVANCE] Requesting avance for ${rut}/${codigoCarrera}`);
+
+    // [NUEVO] Check fallback first
+    const fallback = getLocalAvanceFallback(rut, codigoCarrera);
+    if (fallback) {
+        console.log(`[AVANCE FALLBACK] Using local fallback for ${rut}/${codigoCarrera}`);
+        return {
+            data: fallback.avance,
+            meta: { source: fallback.source, fetchedAt: new Date().toISOString() }
+        };
+    }
 
     try {
         const response = await fetch(targetUrl, { method: 'GET' });

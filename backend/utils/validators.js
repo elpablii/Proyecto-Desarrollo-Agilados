@@ -64,9 +64,13 @@ const saveProyeccionRules = () => [
         .optional() // Permite que sea nulo o no venga
         .trim()
         .escape(), // ¡Sanitización clave para prevenir XSS!
-    body('projection', 'La proyección es requerida y debe ser un array')
+    body('projection', 'La proyección es requerida y debe ser un objeto o array')
         .notEmpty()
-        .isObject()
+        // [FIX] Frontend manda objeto { semesters: ... }, no array directo.
+        // Permitimos ambos o solo objeto.
+        .custom(value => {
+            return (typeof value === 'object' && value !== null);
+        })
 ];
 
 /**

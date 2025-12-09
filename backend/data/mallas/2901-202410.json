@@ -1,0 +1,44 @@
+[
+    {
+        "codigo": "ICC-101",
+        "asignatura": "Introducción a la Ingeniería",
+        "nivel": 1,
+        "creditos": 6,
+        "prereq": ""
+    },
+    {
+        "codigo": "MAT-011",
+        "asignatura": "Cálculo I",
+        "nivel": 1,
+        "creditos": 10,
+        "prereq": ""
+    },
+    {
+        "codigo": "ICC-102",
+        "asignatura": "Programación I",
+        "nivel": 1,
+        "creditos": 8,
+        "prereq": ""
+    },
+    {
+        "codigo": "MAT-012",
+        "asignatura": "Cálculo II",
+        "nivel": 2,
+        "creditos": 10,
+        "prereq": "MAT-011"
+    },
+    {
+        "codigo": "ICC-201",
+        "asignatura": "Programación II",
+        "nivel": 2,
+        "creditos": 8,
+        "prereq": "ICC-102"
+    },
+    {
+        "codigo": "ICC-301",
+        "asignatura": "Bases de Datos",
+        "nivel": 3,
+        "creditos": 8,
+        "prereq": "ICC-201"
+    }
+]

@@ -1,0 +1,20 @@
+[
+    {
+        "course": "DCCB-00142",
+        "status": "APROBADO",
+        "period": "2023-10",
+        "grade": 5.5
+    },
+    {
+        "course": "DCCB-00141",
+        "status": "APROBADO",
+        "period": "2023-10",
+        "grade": 6.2
+    },
+    {
+        "course": "DCCB-00246",
+        "status": "CURSANDO",
+        "period": "2024-10",
+        "grade": 0
+    }
+]

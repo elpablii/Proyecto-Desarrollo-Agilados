@@ -14,9 +14,8 @@ services:
       - NODE_ENV=production
       - PORT=3001
     volumes:
-      # Persist session and proyecciones files on the host for development convenience
-      - ./backend/sessions.json:/app/sessions.json
-      - ./backend/proyecciones.json:/app/proyecciones.json
+      # Persist data (db, sessions, mock fallbacks) in a single volume
+      - ./backend/data:/app/data
     networks:
       - agilados_net
     healthcheck:

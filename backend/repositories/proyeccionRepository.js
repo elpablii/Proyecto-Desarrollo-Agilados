@@ -1,79 +1,128 @@
-const fs = require('fs');
+const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-// [NUEVO] Importar la utilidad de escritura atómica
-const { atomicWriteFile } = require('../utils/helpers');
+const fs = require('fs');
 
-const PROYECCIONES_FILE = path.join(__dirname, '..', 'proyecciones.json');
-let proyecciones = []; // Caché en memoria de proyecciones
+// Ruta de la base de datos dentro del volumen montado
+const DB_PATH = process.env.DATABASE_URL
+    ? process.env.DATABASE_URL.replace('file:', '')
+    : path.join(__dirname, '../data/dev.db');
 
-const loadProyeccionesFromDisk = () => {
-    // ... (código existente sin cambios)
-    try {
-        if (fs.existsSync(PROYECCIONES_FILE)) {
-            const raw = fs.readFileSync(PROYECCIONES_FILE, 'utf8');
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) proyecciones = parsed;
-            console.log(`[INFO] Repositorio: Cargadas ${proyecciones.length} proyecciones desde disco`);
+// Asegurar que el directorio data exista
+const dataDir = path.dirname(DB_PATH);
+if (!fs.existsSync(dataDir)) {
+    console.log('[DB] Creating data directory at', dataDir);
+    fs.mkdirSync(dataDir, { recursive: true });
+}
+
+console.log('[DB] Connecting to SQLite at:', DB_PATH);
+
+const db = new sqlite3.Database(DB_PATH, (err) => {
+    if (err) {
+        console.error('[DB ERROR] Could not connect to database:', err.message);
+    } else {
+        console.log('[DB] Connected to SQLite database.');
+        initializeParams();
+    }
+});
+
+function initializeParams() {
+    const query = `
+    CREATE TABLE IF NOT EXISTS proyecciones (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        carreras_codigo TEXT NOT NULL,
+        name TEXT NOT NULL,
+        data TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`;
+
+    db.run(query, (err) => {
+        if (err) {
+            console.error('[DB ERROR] Error creating table:', err.message);
+        } else {
+            console.log('[DB] Table "proyecciones" ready.');
         }
-    } catch (err) {
-        console.warn('[WARN] Repositorio: No se pudieron cargar proyecciones desde disco:', err.message);
-    }
+    });
+}
+
+// Helper para promisify db.all
+const dbAll = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+        });
+    });
 };
 
-/**
- * [MODIFICADO] Persiste el estado actual de la caché de proyecciones al archivo JSON.
- * Ahora es asíncrono y atómico.
- */
-const saveProyeccionesToDisk = async () => {
-    try {
-        const data = JSON.stringify(proyecciones, null, 2);
-        // Usa la nueva utilidad de escritura atómica
-        await atomicWriteFile(PROYECCIONES_FILE, data);
-    } catch (err) {
-        console.warn('[WARN] Repositorio: No se pudieron guardar proyecciones en disco:', err.message);
-    }
+// Helper para promisify db.run
+const dbRun = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.run(sql, params, function (err) {
+            if (err) reject(err);
+            else resolve(this);
+        });
+    });
 };
 
-// --- Interfaz del Repositorio ---
-
-/**
- * [MODIFICADO] Guarda una proyección.
- * Ahora es asíncrono.
- */
 const save = async (projectionData) => {
-    proyecciones.push(projectionData);
-    await saveProyeccionesToDisk(); // Espera a que se guarde
+    // projectionData structure: { id, userId, codigoCarrera, name, date, projection (array) }
+    // We store the 'projection' array as a JSON string in 'data' column
+    const { id, userId, codigoCarrera, name, projection } = projectionData;
+    const dataStr = JSON.stringify(projection);
+
+    const sql = `
+        INSERT INTO proyecciones (id, user_id, carreras_codigo, name, data, created_at)
+        VALUES (?, ?, ?, ?, ?, datetime('now'))
+    `;
+
+    await dbRun(sql, [id, userId, codigoCarrera, name, dataStr]);
     return projectionData;
 };
 
-const findByUser = (userId, codigoCarrera) => {
-    // ... (código existente sin cambios)
-    return proyecciones.filter(p => 
-        p.userId === userId && 
-        (!codigoCarrera || p.codigoCarrera === codigoCarrera)
-    );
+const findByUser = async (userId, codigoCarrera) => {
+    const sql = `
+        SELECT * FROM proyecciones 
+        WHERE user_id = ? AND carreras_codigo = ?
+        ORDER BY created_at DESC
+    `;
+
+    const rows = await dbAll(sql, [userId, codigoCarrera]);
+
+    // Map back to object structure
+    return rows.map(row => ({
+        id: row.id,
+        userId: row.user_id,
+        codigoCarrera: row.carreras_codigo,
+        name: row.name,
+        date: row.created_at,
+        projection: JSON.parse(row.data)
+    }));
 };
 
-const findById = (id) => {
-    // ... (código existente sin cambios)
-    return proyecciones.find(p => p.id === id);
+const findById = async (id) => {
+    const sql = `SELECT * FROM proyecciones WHERE id = ?`;
+    const rows = await dbAll(sql, [id]);
+    if (rows.length === 0) return null;
+
+    const row = rows[0];
+    return {
+        id: row.id,
+        userId: row.user_id,
+        codigoCarrera: row.carreras_codigo,
+        name: row.name,
+        date: row.created_at,
+        projection: JSON.parse(row.data)
+    };
 };
 
-const deleteById = async (id) => {
-    const initialLength = proyecciones.length;
-    // Filtrar para quitar el elemento con ese ID
-    proyecciones = proyecciones.filter(p => p.id !== id);
-    
-    // Si la longitud cambió, significa que borramos algo
-    if (proyecciones.length !== initialLength) {
-        await saveProyeccionesToDisk(); // Persistir cambios
-        return true;
-    }
-    return false; // No se encontró
+const deleteById = async (id, userId) => {
+    const sql = `DELETE FROM proyecciones WHERE id = ? AND user_id = ?`;
+    const result = await dbRun(sql, [id, userId]);
+    return result.changes > 0;
 };
 
 module.exports = {
-    loadProyeccionesFromDisk,
     save,
     findByUser,
     findById,

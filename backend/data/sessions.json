@@ -1,0 +1,24 @@
+[
+  {
+    "id": "369f81ea00dcdf9a1464c89e70dfd4b64001904302b5b83e74a1c68012f67b2a",
+    "token": "df859ad12ec9cc98ca3edb92af53d3b1d4277f145c11fa27f64ee1e9f151467e",
+    "userId": "33.333.333-3",
+    "email": "ximena@example.com",
+    "carreras": [
+      {
+        "codigo": "8266",
+        "nombre": "Ingeniería Civil Industrial",
+        "catalogo": "202410"
+      },
+      {
+        "codigo": "2901",
+        "nombre": "Ingeniería en Tecnologías de Información",
+        "catalogo": "202410"
+      }
+    ],
+    "createdAt": 1765252843979,
+    "lastActivity": 1765252851491,
+    "expiresAt": 1765339243979,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+  }
+]

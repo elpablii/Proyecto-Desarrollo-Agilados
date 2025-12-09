@@ -33,12 +33,19 @@ const getLocalMallaFallback = (mallaId) => {
     return null;
 };
 
-/**
- * [NUEVO] Escribe datos en un archivo de forma atómica.
- * Escribe directamente sin usar .tmp para evitar problemas de lock en WSL2/Docker.
- * @param {string} filePath - Ruta al archivo final.
- * @param {string} data - Datos a escribir (string).
- */
+const getLocalAvanceFallback = (rut, codigoCarrera) => {
+    try {
+        const fallbackPath = path.join(__dirname, '..', 'data', 'avances', `${rut}-${codigoCarrera}.json`);
+        if (fs.existsSync(fallbackPath)) {
+            const raw = fs.readFileSync(fallbackPath, 'utf8');
+            return { avance: JSON.parse(raw), source: 'local-fallback', path: fallbackPath };
+        }
+    } catch (e) {
+        console.warn('[AVANCE FALLBACK] Error leyendo fallback:', e.message);
+    }
+    return null;
+};
+
 const atomicWriteFile = async (filePath, data) => {
     try {
         await fsPromises.writeFile(filePath, data, 'utf8');
@@ -51,5 +58,6 @@ const atomicWriteFile = async (filePath, data) => {
 module.exports = {
     normalizeRut,
     getLocalMallaFallback,
-    atomicWriteFile // Exportar la nueva utilidad
+    getLocalAvanceFallback,
+    atomicWriteFile
 };

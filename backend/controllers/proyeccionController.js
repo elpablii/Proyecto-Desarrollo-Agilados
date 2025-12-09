@@ -22,11 +22,11 @@ const saveProyeccion = async (req, res) => {
 
 // (listProyecciones y getProyeccion no llaman servicios async, no necesitan cambios)
 // ... (listProyecciones, getProyeccion) ...
-const listProyecciones = (req, res) => {
+const listProyecciones = async (req, res) => {
     const codigo = req.query.codigo;
     const userId = req.session.userId;
     try {
-        const list = proyeccionService.getProjectionsByUser(userId, codigo);
+        const list = await proyeccionService.getProjectionsByUser(userId, codigo);
         res.json({ proyecciones: list, meta: { count: list.length } });
     } catch (err) {
         console.error('[PROYECCION LIST ERROR]', err);
@@ -34,11 +34,11 @@ const listProyecciones = (req, res) => {
     }
 };
 
-const getProyeccion = (req, res) => {
+const getProyeccion = async (req, res) => {
     const { id } = req.params;
     const userId = req.session.userId;
     try {
-        const p = proyeccionService.getProjectionById(id);
+        const p = await proyeccionService.getProjectionById(id);
         if (!p) {
             return res.status(404).json({ error: 'Proyección no encontrada' });
         }
@@ -60,11 +60,11 @@ const deleteProyeccion = async (req, res) => {
     try {
         // 1. Verificar que existe y pertenece al usuario
         const existing = proyeccionService.getProjectionById(id);
-        
+
         if (!existing) {
             return res.status(404).json({ error: 'Proyección no encontrada' });
         }
-        
+
         if (existing.userId !== userId) {
             console.warn(`[AUTH] Usuario ${userId} intentó borrar proyección de ${existing.userId}`);
             return res.status(403).json({ error: 'No autorizado para eliminar esta proyección' });
@@ -72,7 +72,7 @@ const deleteProyeccion = async (req, res) => {
 
         // 2. Proceder a eliminar
         const deleted = await proyeccionService.deleteProjection(id);
-        
+
         if (deleted) {
             console.log(`[PROYECCION] Eliminada ID: ${id} por Usuario: ${userId}`);
             res.json({ message: 'Proyección eliminada correctamente', id });
